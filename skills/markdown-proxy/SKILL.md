@@ -24,8 +24,8 @@ description: |
 
 | URL 特征 | 路由到 | 原因 |
 |----------|--------|------|
-| `mp.weixin.qq.com` | 内置 `scripts/fetch_weixin.py` | 公众号有反爬，需 Playwright 抓取 |
-| `feishu.cn` / `larksuite.com`（文档/知识库） | 内置 `scripts/fetch_feishu.py` | 需要飞书 API 认证 |
+| `mp.weixin.qq.com` | 内置 `tools/capabilities/fetchers/weixin.py` | 公众号有反爬，需 Playwright 抓取 |
+| `feishu.cn` / `larksuite.com`（文档/知识库） | 内置 `tools/capabilities/fetchers/feishu.py` | 需要飞书 API 认证 |
 | `youtube.com` / `youtu.be` | `yt-search-download` skill | YouTube 有专用工具链 |
 | 其他所有 URL | 代理服务级联（见下方） |  |
 
@@ -62,7 +62,7 @@ else:
 ### Step A: 公众号文章抓取（内置）
 
 ```bash
-python "$HOME\\.codex\\skills\\markdown-proxy\\scripts\\fetch_weixin.py" "WEIXIN_URL"
+python tools/capabilities/fetchers/weixin.py "WEIXIN_URL"
 ```
 
 依赖：`playwright`、`beautifulsoup4`、`lxml`
@@ -72,7 +72,7 @@ python "$HOME\\.codex\\skills\\markdown-proxy\\scripts\\fetch_weixin.py" "WEIXIN
 ### Step B: 飞书文档抓取（内置）
 
 ```bash
-python "$HOME\\.codex\\skills\\markdown-proxy\\scripts\\fetch_feishu.py" "FEISHU_URL"
+python tools/capabilities/fetchers/feishu.py "FEISHU_URL"
 ```
 
 依赖：`requests`（标准库级别），环境变量 `FEISHU_APP_ID` + `FEISHU_APP_SECRET`
@@ -148,17 +148,17 @@ curl.exe -sL "https://r.jina.ai/https://example.com/article" 2>$null
 
 ### 公众号文章
 ```bash
-python "$HOME\\.codex\\skills\\markdown-proxy\\scripts\\fetch_weixin.py" "https://mp.weixin.qq.com/s/abc123"
+python tools/capabilities/fetchers/weixin.py "https://mp.weixin.qq.com/s/abc123"
 ```
 
 ### 飞书文档
 ```bash
-python "$HOME\\.codex\\skills\\markdown-proxy\\scripts\\fetch_feishu.py" "https://xxx.feishu.cn/docx/xxxxxxxx"
+python tools/capabilities/fetchers/feishu.py "https://xxx.feishu.cn/docx/xxxxxxxx"
 ```
 
 ### 飞书知识库
 ```bash
-python "$HOME\\.codex\\skills\\markdown-proxy\\scripts\\fetch_feishu.py" "https://xxx.feishu.cn/wiki/xxxxxxxx"
+python tools/capabilities/fetchers/feishu.py "https://xxx.feishu.cn/wiki/xxxxxxxx"
 ```
 
 ## Notes

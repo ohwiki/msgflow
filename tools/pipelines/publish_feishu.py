@@ -53,7 +53,7 @@ def _try_api(title: str, content: str) -> str:
         log.error("feishu credentials missing")
         return "错误：未配置飞书凭据（FEISHU_APP_ID / FEISHU_APP_SECRET），且 lark-cli 不可用"
 
-    script = Path(__file__).parent.parent / "capabilities" / "write_feishu.py"
+    script = Path(__file__).parent.parent / "capabilities" / "writers" / "feishu.py"
     cmd = [sys.executable, str(script), "--title", title]
 
     wiki_space = os.environ.get("FEISHU_WIKI_SPACE")

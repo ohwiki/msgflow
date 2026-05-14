@@ -24,12 +24,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install playwright beautifulsoup4 lxml
+          pip install playwright beautifulsoup4 lxml markdownify
           playwright install chromium
 
       - name: Fetch article
         run: |
-          output_path=$(python tools/content-fetch/fetch_weixin.py \
+          output_path=$(python tools/capabilities/fetchers/weixin.py \
             "${{ github.event.inputs.url }}" \
             --output-dir articles)
           echo "Saved article to ${output_path}"

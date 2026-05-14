@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fetch WeChat (公众号) article as Markdown. Uses Playwright + markdownify."""
+"""Fetch WeChat (公众号) article as Markdown via Playwright + markdownify."""
 
 import sys
 import json
@@ -45,13 +45,10 @@ async def fetch_weixin_article(url: str) -> dict:
         await browser.close()
 
     soup = BeautifulSoup(html, "lxml")
-
     title_el = soup.select_one("#activity-name")
     title = title_el.get_text(strip=True) if title_el else ""
-
     author_el = soup.select_one("#js_author_name") or soup.select_one(".rich_media_meta_text")
     author = author_el.get_text(strip=True) if author_el else ""
-
     time_el = soup.select_one("#publish_time")
     publish_time = time_el.get_text(strip=True) if time_el else ""
 
@@ -59,11 +56,8 @@ async def fetch_weixin_article(url: str) -> dict:
     if not content_el:
         return {"error": "Could not find article content (#js_content)"}
 
-    # 清理无用标签
     for tag in content_el.find_all(["script", "style"]):
         tag.decompose()
-
-    # 处理图片 data-src → src
     for img in content_el.find_all("img"):
         src = img.get("data-src") or img.get("src") or ""
         if src:
@@ -71,14 +65,7 @@ async def fetch_weixin_article(url: str) -> dict:
         else:
             img.decompose()
 
-    # 用 markdownify 转换
-    content = md(
-        str(content_el),
-        heading_style="ATX",
-        code_language="",
-    )
-
-    # 清理多余空行
+    content = md(str(content_el), heading_style="ATX", code_language="")
     content = re.sub(r"\n{3,}", "\n\n", content).strip()
 
     return {"title": title, "author": author, "publish_time": publish_time, "content": content, "url": url}
@@ -87,7 +74,6 @@ async def fetch_weixin_article(url: str) -> dict:
 def format_as_markdown(result: dict) -> str:
     if "error" in result:
         return f"Error: {result['error']}"
-
     parts = ["---"]
     if result.get("title"):
         parts.append(f'title: "{result["title"]}"')
@@ -96,18 +82,27 @@ def format_as_markdown(result: dict) -> str:
     if result.get("publish_time"):
         parts.append(f'date: "{result["publish_time"]}"')
     parts.append(f'url: "{result["url"]}"')
-    parts.append("---")
-    parts.append("")
+    parts.append("---\n")
     if result.get("title"):
-        parts.append(f"# {result['title']}")
-        parts.append("")
+        parts.append(f"# {result['title']}\n")
     parts.append(result.get("content", ""))
     return "\n".join(parts)
 
 
+def fetch(url: str) -> str | None:
+    """统一接口：返回 Markdown 字符串或 None"""
+    try:
+        result = asyncio.run(fetch_weixin_article(url))
+    except Exception:
+        return None
+    if "error" in result:
+        return None
+    return format_as_markdown(result)
+
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: fetch_weixin.py <url> [--json] [--output-dir DIR]", file=sys.stderr)
+        print("Usage: weixin.py <url> [--json] [--output-dir DIR]", file=sys.stderr)
         sys.exit(1)
 
     url = sys.argv[1]
@@ -115,13 +110,10 @@ if __name__ == "__main__":
     output_dir = None
     if "--output-dir" in sys.argv:
         idx = sys.argv.index("--output-dir")
-        if idx + 1 >= len(sys.argv):
-            print("--output-dir requires a value", file=sys.stderr)
-            sys.exit(1)
-        output_dir = Path(sys.argv[idx + 1])
+        if idx + 1 < len(sys.argv):
+            output_dir = Path(sys.argv[idx + 1])
 
     result = asyncio.run(fetch_weixin_article(url))
-
     if "error" in result:
         print(result["error"], file=sys.stderr)
         sys.exit(1)

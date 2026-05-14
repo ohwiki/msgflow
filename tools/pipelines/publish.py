@@ -1,6 +1,6 @@
 """Pipeline: 手动发布文件到墨问"""
 from pathlib import Path
-from capabilities.publisher import publish_to_mowen
+from capabilities.writers.mowen import publish_to_mowen
 
 
 def execute(target: str, **kwargs) -> str:

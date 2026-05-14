@@ -4,7 +4,7 @@ from pathlib import Path
 from capabilities.content_fetcher import fetch
 from capabilities.ai_runner import run_skill
 from capabilities.cover import get_cover_url
-from capabilities.publisher import publish_to_mowen
+from capabilities.writers.mowen import publish_to_mowen
 from capabilities.file_store import save
 from capabilities.logger import get_logger
 

@@ -25,16 +25,43 @@ msgflow 是消息驱动的 AI 内容工作流。三部分：
 - 新路由加到 `index.js`，新指令加到 `lib/command.js`
 - 配置项加到 `lib/config.js` 的 SENSITIVE_KEYS 或 NON_SENSITIVE_KEYS
 - Admin 页面字段加到 `handlers/admin.js` 的 HTML 和 fields 数组
-- 用 `log.info/error` 记录关键操作（`lib/log.js`）
+- 用 `log.info/warn/error` 记录关键操作（`lib/log.js`）
 - 部署前同步到 nullclaw-ci 仓库：`cp worker/* → nullclaw-ci/worker/`
+
+### 错误处理（必须遵守）
+
+- 所有 `await request.json()` 必须 try-catch，catch 返回 400
+- 所有外部 fetch（飞书 API、GitHub API 等）必须 try-catch，catch 记录 log.error 并返回合理的错误响应
+- 不要让第三方 API 故障导致 Worker 返回 500
+- `env.XXX` 访问前检查是否存在，缺失时返回明确错误而不是 undefined 报错
+
+### 日志（必须遵守）
+
+- 每个 handler 的失败路径必须有 log.warn 或 log.error
+- 配置变更必须 log.info（记录改了什么 key，不记录 value）
+- 鉴权失败必须 log.warn
+- 不要在高频路径（如 GET /）打 info 日志，避免日志爆炸
+- 日志格式：`log.info("动作描述", { key: value })`，msg 用英文动词短语
 
 ## 3. Python（tools/）规范
 
 - 用项目的 logger（`from capabilities.logger import get_logger`）
 - 新 pipeline 放 `tools/pipelines/`，新能力放 `tools/capabilities/`
 - `run_task.py` 注册新子命令后，workflow 的 case 语句会自动匹配（`*` 通配）
-- 错误处理：不要静默吞异常，至少 log.error
 - 结果写入 `/tmp/result.txt`（workflow 读取并回调）
+
+### 错误处理（必须遵守）
+
+- 不要用裸 `except Exception: return None`——至少 log.error 记录原因
+- 外部请求（HTTP、subprocess）必须有 timeout
+- 失败时日志要包含：什么操作失败 + 错误信息 + 相关上下文（URL、文件名等）
+
+### 日志（必须遵守）
+
+- 每个 fetcher/writer 的 fetch() 入口打 log.info（记录开始）
+- 成功打 log.info（记录结果长度或关键信息）
+- 失败打 log.error（记录错误原因）
+- 模块名用点分层级：`get_logger("fetcher.feishu")`、`get_logger("writer.mowen")`
 
 ## 4. Workflow 规范
 

@@ -29,7 +29,8 @@ export async function handleAdminConfig(request, env) {
     return json(getMaskedConfig(config));
   }
   if (request.method === "POST") {
-    const body = await request.json();
+    let body;
+    try { body = await request.json(); } catch { return new Response("Bad Request", { status: 400 }); }
     await setConfig(env, body);
     log.info("config updated", { keys: Object.keys(body) });
     const config = await getConfig(env);
@@ -48,29 +49,35 @@ export async function handleFeishuSpaces(request, env) {
       status: 400, headers: { "Content-Type": "application/json" },
     });
   }
-  // 获取 token
-  const tokenResp = await fetch("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal", {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ app_id: appId, app_secret: appSecret }),
-  });
-  const tokenData = await tokenResp.json();
-  if (tokenData.code !== 0) {
-    return new Response(JSON.stringify({ error: `获取 token 失败: ${tokenData.msg}` }), {
+  try {
+    const tokenResp = await fetch("https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ app_id: appId, app_secret: appSecret }),
+    });
+    const tokenData = await tokenResp.json();
+    if (tokenData.code !== 0) {
+      return new Response(JSON.stringify({ error: `获取 token 失败: ${tokenData.msg}` }), {
+        status: 500, headers: { "Content-Type": "application/json" },
+      });
+    }
+    const spacesResp = await fetch("https://open.feishu.cn/open-apis/wiki/v2/spaces", {
+      headers: { Authorization: `Bearer ${tokenData.tenant_access_token}` },
+    });
+    const spacesData = await spacesResp.json();
+    const spaces = (spacesData.data?.items || []).map(s => ({ name: s.name, space_id: s.space_id }));
+    return new Response(JSON.stringify({ spaces }), { headers: { "Content-Type": "application/json" } });
+  } catch (e) {
+    log.error("feishu spaces fetch failed", { error: e.message });
+    return new Response(JSON.stringify({ error: `请求失败: ${e.message}` }), {
       status: 500, headers: { "Content-Type": "application/json" },
     });
   }
-  // 列出知识库
-  const spacesResp = await fetch("https://open.feishu.cn/open-apis/wiki/v2/spaces", {
-    headers: { Authorization: `Bearer ${tokenData.tenant_access_token}` },
-  });
-  const spacesData = await spacesResp.json();
-  const spaces = (spacesData.data?.items || []).map(s => ({ name: s.name, space_id: s.space_id }));
-  return new Response(JSON.stringify({ spaces }), { headers: { "Content-Type": "application/json" } });
 }
 
 export async function handleInternalConfig(request, env) {
   if (request.method !== "POST") return new Response("Method Not Allowed", { status: 405 });
-  const body = await request.json();
+  let body;
+  try { body = await request.json(); } catch { return new Response("Bad Request", { status: 400 }); }
   if (!body.secret || !timingSafeEqual(body.secret, env.CALLBACK_SECRET || "")) {
     return new Response("Unauthorized", { status: 401 });
   }

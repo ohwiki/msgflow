@@ -1,3 +1,5 @@
+import { log } from "./log.js";
+
 /**
  * @typedef {{ action: string, target?: string, style?: string, skill?: string }} Command
  */
@@ -49,6 +51,7 @@ export function parseCommand(text) {
   const skillMatch = text.match(/^skill:(\S+)\s+(.+)$/i);
   if (skillMatch) return { action: "skill", skill: skillMatch[1], target: skillMatch[2] };
 
+  log.info("command not recognized", { text: text.substring(0, 50) });
   return null;
 }
 

@@ -1,4 +1,5 @@
 import { getConfig, setConfig, getMaskedConfig, getSensitiveConfig } from "../lib/config.js";
+import { log } from "../lib/log.js";
 
 function timingSafeEqual(a, b) {
   if (a.length !== b.length) return false;
@@ -15,12 +16,12 @@ function checkAdmin(request, env) {
 }
 
 export async function handleAdmin(request, env) {
-  if (!checkAdmin(request, env)) return new Response("Forbidden", { status: 403 });
+  if (!checkAdmin(request, env)) { log.warn("admin auth failed"); return new Response("Forbidden", { status: 403 }); }
   return new Response(ADMIN_HTML, { headers: { "Content-Type": "text/html; charset=utf-8" } });
 }
 
 export async function handleAdminConfig(request, env) {
-  if (!checkAdmin(request, env)) return new Response("Forbidden", { status: 403 });
+  if (!checkAdmin(request, env)) { log.warn("admin config auth failed"); return new Response("Forbidden", { status: 403 }); }
   const json = (data) => new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json" } });
 
   if (request.method === "GET") {
@@ -30,6 +31,7 @@ export async function handleAdminConfig(request, env) {
   if (request.method === "POST") {
     const body = await request.json();
     await setConfig(env, body);
+    log.info("config updated", { keys: Object.keys(body) });
     const config = await getConfig(env);
     return json(getMaskedConfig(config));
   }

@@ -20,6 +20,7 @@ export default {
     const path = url.pathname;
 
     try {
+      log.info("request", { method: request.method, path });
       // Telegram
       if (path === `/telegram/webhook/${env.CALLBACK_SECRET}` && request.method === "POST") {
         return await handleTelegram(request, env);

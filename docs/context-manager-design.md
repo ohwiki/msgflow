@@ -291,12 +291,18 @@ python ctx.py load "msgflow重构"
 
 ## 与现有工具的集成
 
-| Agent | Skill 位置 | 触发方式 |
-|-------|-----------|---------|
-| Kiro CLI | `~/.kiro/skills/context-manager/SKILL.md` | 自动识别 |
-| Hermes | `~/.hermes/skills/context-manager/SKILL.md` | 自动识别 |
-| Claude Code | `.claude/skills/context-manager/SKILL.md` | 项目级 |
-| Codex | `.codex/skills/context-manager/SKILL.md` | 项目级 |
+### Kiro CLI（推荐方式：Skill，不需要 hooks）
+
+Kiro CLI 的 hooks 机制和 claude-mem 格式不兼容，但 Kiro 原生支持 Skills。直接把 Skill 文件放到 `~/.kiro/skills/context-memory/SKILL.md`，Kiro 读到后会主动调用 `ctx` CLI 命令。
+
+**不需要 hooks 适配，不需要改 Kiro 源码，零侵入。**
+
+| Agent | 集成方式 | Skill 位置 |
+|-------|---------|-----------|
+| Kiro CLI | **Skill（推荐）** | `~/.kiro/skills/context-memory/SKILL.md` |
+| Hermes | Skill | `~/.hermes/skills/context-memory/SKILL.md` |
+| Claude Code | Skill 或 hooks（claude-mem） | `.claude/skills/context-memory/SKILL.md` |
+| Codex | Skill 或 hooks（claude-mem） | `.codex/skills/context-memory/SKILL.md` |
 
 ## 验收标准
 

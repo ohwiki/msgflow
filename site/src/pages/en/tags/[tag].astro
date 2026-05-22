@@ -1,0 +1,30 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Breadcrumb from '../../../components/Breadcrumb.astro';
+import PostCard from '../../../components/PostCard.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const articles = await getCollection('articles-en', ({ data }) => !data.draft);
+  const tags = [...new Set(articles.flatMap((a) => a.data.tags))];
+  return tags.map((tag) => ({
+    params: { tag },
+    props: { articles: articles.filter((a) => a.data.tags.includes(tag)).sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()) },
+  }));
+}
+
+const { tag } = Astro.params;
+const { articles } = Astro.props;
+---
+
+<BaseLayout title={`Tag: ${tag}`}>
+  <Breadcrumb items={[{ label: 'Tags', href: '/en/tags' }, { label: tag }]} />
+  <section class="mx-auto max-w-app px-4 pb-6">
+    <h1 class="text-2xl font-semibold tracking-wide mb-8">Tag: <span class="text-accent">{tag}</span></h1>
+    <ul>
+      {articles.map((a) => (
+        <PostCard title={a.data.title} slug={a.slug} date={a.data.date} summary={a.data.summary} basePath="/en/articles" />
+      ))}
+    </ul>
+  </section>
+</BaseLayout>

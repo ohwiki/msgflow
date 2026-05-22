@@ -1,0 +1,37 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumb from '../../components/Breadcrumb.astro';
+import { getCollection } from 'astro:content';
+
+const articles = (await getCollection('articles-en', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const grouped = new Map<string, typeof articles>();
+articles.forEach((a) => {
+  const year = a.data.date.getFullYear().toString();
+  if (!grouped.has(year)) grouped.set(year, []);
+  grouped.get(year)!.push(a);
+});
+---
+
+<BaseLayout title="Archives">
+  <Breadcrumb items={[{ label: 'Archives' }]} />
+  <section class="mx-auto max-w-app px-4 pb-6">
+    <h1 class="text-2xl font-semibold tracking-wide mb-8">Archives <span class="opacity-60 text-lg font-normal">({articles.length} posts)</span></h1>
+    {[...grouped.entries()].map(([year, posts]) => (
+      <div class="mb-8">
+        <h2 class="text-xl font-semibold mb-4">{year}</h2>
+        <ul>
+          {posts.map((a) => (
+            <li class="flex items-baseline gap-4 py-2">
+              <time class="shrink-0 text-sm opacity-60 tabular-nums" datetime={a.data.date.toISOString().slice(0, 10)}>
+                {a.data.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </time>
+              <a href={`/en/articles/${a.slug}`} class="text-accent decoration-dashed hover:underline underline-offset-4">{a.data.title}</a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ))}
+  </section>
+</BaseLayout>

@@ -1,62 +1,49 @@
 ---
 import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import BackToTop from '../components/islands/BackToTop.astro';
 
 interface Props {
   title: string;
   description?: string;
+  type?: 'website' | 'article';
+  publishedTime?: Date;
+  tags?: string[];
 }
 
-const { title, description = 'msgflow - 内容聚合与展示' } = Astro.props;
+const { title, description = 'msgflow - 内容聚合与展示', type = 'website', publishedTime, tags = [] } = Astro.props;
+const canonicalUrl = Astro.url.href;
 ---
 
 <!DOCTYPE html>
 <html lang="zh" data-theme="light">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content={description} />
+  <meta name="viewport" content="width=device-width" />
+  <link rel="canonical" href={canonicalUrl} />
   <title>{title} - msgflow</title>
+  <meta name="description" content={description} />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:type" content={type} />
+  <meta property="og:url" content={canonicalUrl} />
+  {publishedTime && <meta property="article:published_time" content={publishedTime.toISOString()} />}
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
   <link rel="alternate" type="application/rss+xml" title="msgflow RSS" href="/feed.xml" />
+  <link rel="sitemap" href="/sitemap-index.xml" />
   <script is:inline>
-    document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+    (function(){var t=localStorage.getItem('theme')||(window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light');document.documentElement.setAttribute('data-theme',t)})();
   </script>
 </head>
-<body class="min-h-screen bg-base-200">
-  <div class="navbar bg-base-100 shadow-sm sticky top-0 z-50">
-    <div class="container mx-auto">
-      <div class="flex-1">
-        <a href="/" class="text-xl font-bold">📄 msgflow</a>
-      </div>
-      <div class="flex-none gap-2">
-        <a href="/articles" class="btn btn-ghost btn-sm">文章</a>
-        <a href="/feed.xml" class="btn btn-ghost btn-sm">RSS</a>
-        <select class="select select-sm select-bordered" id="theme-select">
-          <option value="light">☀️ Light</option>
-          <option value="dark">🌙 Dark</option>
-          <option value="nord">❄️ Nord</option>
-          <option value="dracula">🧛 Dracula</option>
-          <option value="cupcake">🧁 Cupcake</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <main class="container mx-auto px-4 py-8">
+<body class="flex min-h-svh flex-col bg-background font-mono text-foreground">
+  <Header />
+  <main id="main-content" class="flex-1">
     <slot />
   </main>
-
-  <footer class="footer footer-center p-6 bg-base-100 text-base-content mt-8">
-    <p>Powered by <a href="https://astro.build" class="link">Astro</a> + <a href="https://daisyui.com" class="link">daisyUI</a></p>
-  </footer>
-
-  <script is:inline>
-    const sel = document.getElementById('theme-select');
-    sel.value = localStorage.getItem('theme') || 'light';
-    sel.addEventListener('change', (e) => {
-      const theme = e.target.value;
-      document.documentElement.setAttribute('data-theme', theme);
-      localStorage.setItem('theme', theme);
-    });
-  </script>
+  <Footer />
+  <BackToTop />
 </body>
 </html>

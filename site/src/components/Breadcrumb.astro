@@ -1,0 +1,28 @@
+---
+interface Props {
+  items: { label: string; href?: string }[];
+}
+
+const { items } = Astro.props;
+---
+
+<nav class="mx-auto mt-8 mb-6 w-full max-w-app px-4" aria-label="breadcrumb">
+  <ul class="text-sm font-light [&>li]:inline [&>li:not(:last-child)>a]:hover:opacity-100">
+    <li>
+      <a href="/" class="opacity-70 hover:opacity-100 transition-opacity">首页</a>
+      <span aria-hidden="true" class="mx-1">&raquo;</span>
+    </li>
+    {items.map((item, i) => (
+      <li>
+        {item.href ? (
+          <>
+            <a href={item.href} class="capitalize opacity-70 hover:opacity-100 transition-opacity">{item.label}</a>
+            <span aria-hidden="true" class="mx-1">&raquo;</span>
+          </>
+        ) : (
+          <span class="capitalize opacity-70" aria-current="page">{item.label}</span>
+        )}
+      </li>
+    ))}
+  </ul>
+</nav>

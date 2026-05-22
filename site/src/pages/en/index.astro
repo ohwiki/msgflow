@@ -1,38 +1,40 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
-import PostCard from '../components/PostCard.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
 import { getCollection } from 'astro:content';
+import { t } from '../../i18n/index';
 
-const articles = (await getCollection('articles', ({ data }) => !data.draft))
+const locale = 'en';
+const articles = (await getCollection('articles-en', ({ data }) => !data.draft))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
   .slice(0, 10);
 ---
 
-<BaseLayout title="首页">
+<BaseLayout title="Home">
   <section class="mx-auto max-w-app px-4 pb-6 pt-8">
     <h1 class="my-4 inline-block text-4xl font-bold sm:my-8 sm:text-5xl">msgflow</h1>
     <a href="/feed.xml" class="inline-block" aria-label="RSS Feed" title="RSS Feed">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="scale-125 stroke-accent"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
       <span class="sr-only">RSS Feed</span>
     </a>
-    <p>内容采集 · 清洗 · 展示</p>
+    <p>Content aggregation · Cleaning · Display</p>
   </section>
 
   <hr class="border-border mx-auto max-w-app" />
 
   <section class="mx-auto max-w-app px-4 pb-6 pt-12">
-    <h2 class="text-2xl font-semibold tracking-wide">最新文章</h2>
+    <h2 class="text-2xl font-semibold tracking-wide">{t('ui.recentPosts', locale)}</h2>
     <ul>
       {articles.map((a) => (
-        <PostCard title={a.data.title} slug={a.slug} date={a.data.date} summary={a.data.summary} />
+        <PostCard title={a.data.title} slug={a.slug} date={a.data.date} summary={a.data.summary} basePath="/en/articles" />
       ))}
     </ul>
-    {articles.length === 0 && <p class="py-8 opacity-60">暂无文章</p>}
+    {articles.length === 0 && <p class="py-8 opacity-60">{t('ui.noArticles', locale)}</p>}
   </section>
 
   <div class="my-8 text-center">
-    <a href="/articles" class="group inline-block hover:text-accent">
-      所有文章
+    <a href="/en/articles" class="group inline-block hover:text-accent">
+      {t('ui.allPosts', locale)}
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
     </a>
   </div>

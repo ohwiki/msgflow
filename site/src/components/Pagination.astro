@@ -1,0 +1,32 @@
+---
+import { t, getLocaleFromUrl } from '../i18n/index';
+
+interface Props {
+  currentPage: number;
+  totalPages: number;
+  baseUrl: string;
+}
+
+const { currentPage, totalPages, baseUrl } = Astro.props;
+const locale = getLocaleFromUrl(Astro.url);
+
+if (totalPages <= 1) return;
+
+function pageUrl(page: number) {
+  return page === 1 ? baseUrl : `${baseUrl}/${page}`;
+}
+---
+
+<nav class="flex items-center justify-center gap-4 mt-12 text-sm" aria-label="pagination">
+  {currentPage > 1 ? (
+    <a href={pageUrl(currentPage - 1)} class="hover:text-accent">← {t('action.previous', locale)}</a>
+  ) : (
+    <span class="opacity-40">← {t('action.previous', locale)}</span>
+  )}
+  <span class="opacity-60">{currentPage} / {totalPages}</span>
+  {currentPage < totalPages ? (
+    <a href={pageUrl(currentPage + 1)} class="hover:text-accent">{t('action.next', locale)} →</a>
+  ) : (
+    <span class="opacity-40">{t('action.next', locale)} →</span>
+  )}
+</nav>

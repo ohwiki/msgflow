@@ -31,6 +31,14 @@ ADMIN_HOST = ""
 
 # ─── Production 环境 ────────────────────────
 # 部署命令: npx wrangler deploy --env production
+# admin.ouraihub.com — 后台管理（需登录）
+# api.ouraihub.com — 公开服务（短链/图片/文章API）
+[env.production]
+routes = [
+  { pattern = "admin.ouraihub.com", custom_domain = true },
+  { pattern = "api.ouraihub.com", custom_domain = true },
+]
+
 [env.production.vars]
-WORKER_URL = "https://admin.yourdomain.com"
-ADMIN_HOST = "admin.yourdomain.com"
+WORKER_URL = "https://api.ouraihub.com"
+ADMIN_HOST = "admin.ouraihub.com"

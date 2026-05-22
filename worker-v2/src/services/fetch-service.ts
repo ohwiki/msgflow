@@ -16,6 +16,7 @@ import { genericFetcher } from "../fetchers/generic.js";
 import { ArticleRepository } from "../repositories/article-repository.js";
 import { FileRepository } from "../repositories/file-repository.js";
 import { CleanService } from "./clean-service.js";
+import { triggerGitHubWorkflow } from "./github-actions.js";
 
 /** Ordered fetcher registry — first match wins, generic is always last. */
 const FETCHERS: Fetcher[] = [weixinFetcher, feishuFetcher, twitterFetcher, rssFetcher, genericFetcher];
@@ -112,6 +113,15 @@ export class FetchService {
     });
 
     this.log.info("fetch_done", { articleId, sourceType, status });
+
+    // Auto-trigger GitHub Actions for articles with code blocks
+    if (result.hasCodeBlocks && r2RawKey) {
+      const triggered = await triggerGitHubWorkflow(this.env, articleId, r2RawKey, this.log);
+      if (triggered) {
+        this.log.info("actions_triggered", { articleId });
+      }
+    }
+
     return { articleId, title: result.title, sourceType, hasCodeBlocks: result.hasCodeBlocks, status };
   }
 }

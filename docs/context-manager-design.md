@@ -173,31 +173,68 @@ ctx search "daisyUI"
 
 ```sql
 -- 数据库位置：~/.ctx/contexts.db
+-- 初始化时执行以下 PRAGMA
+PRAGMA journal_mode=WAL;          -- 并发读不阻塞写
+PRAGMA foreign_keys=ON;           -- 外键约束生效
+PRAGMA user_version=1;            -- Schema 版本（用于未来迁移）
 
 CREATE TABLE IF NOT EXISTS projects (
-  id TEXT PRIMARY KEY,                -- 项目名（如 "msgflow重构"）
+  id TEXT PRIMARY KEY,                -- 项目名（如 "msgflow重构"），也是唯一标识
   summary TEXT NOT NULL DEFAULT '',   -- 当前状态一句话
   pending TEXT DEFAULT '[]',          -- JSON array: 待做事项
   files TEXT DEFAULT '[]',            -- JSON array: 关键文件路径
-  created_at TEXT DEFAULT (datetime('now')),
-  updated_at TEXT DEFAULT (datetime('now'))
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
 );
 
 CREATE TABLE IF NOT EXISTS entries (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),  -- UUID，方便跨设备同步
   project_id TEXT NOT NULL,
-  type TEXT NOT NULL,                 -- "decision" | "progress" | "note" | "pending"
+  type TEXT NOT NULL CHECK(type IN ('decision', 'progress', 'note', 'pending')),
   content TEXT NOT NULL,
-  created_at TEXT DEFAULT (datetime('now')),
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
 );
 
-CREATE INDEX IF NOT EXISTS idx_entries_project ON entries(project_id);
+-- 索引：只建查询用到的
+CREATE INDEX IF NOT EXISTS idx_entries_project ON entries(project_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_entries_type ON entries(project_id, type);
 
--- 全文搜索
-CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts USING fts5(content, content=entries, content_rowid=id);
+-- FTS5 全文搜索（独立虚拟表，不和主表混）
+CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts USING fts5(
+  content,
+  content=entries,
+  content_rowid=rowid,
+  tokenize='unicode61'
+);
+
+-- FTS 同步触发器（主表增删时自动更新 FTS 索引）
+CREATE TRIGGER IF NOT EXISTS entries_ai AFTER INSERT ON entries BEGIN
+  INSERT INTO entries_fts(rowid, content) VALUES (new.rowid, new.content);
+END;
+
+CREATE TRIGGER IF NOT EXISTS entries_ad AFTER DELETE ON entries BEGIN
+  INSERT INTO entries_fts(entries_fts, rowid, content) VALUES('delete', old.rowid, old.content);
+END;
+
+CREATE TRIGGER IF NOT EXISTS entries_au AFTER UPDATE ON entries BEGIN
+  INSERT INTO entries_fts(entries_fts, rowid, content) VALUES('delete', old.rowid, old.content);
+  INSERT INTO entries_fts(rowid, content) VALUES (new.rowid, new.content);
+END;
 ```
+
+### SQLite 最佳实践说明
+
+| 实践 | 本方案的做法 |
+|------|------------|
+| WAL 模式 | 开启，CLI 和其他进程可以同时读 |
+| 外键约束 | 开启，删除 project 自动级联删除 entries |
+| 时间格式 | ISO 8601 UTC（`strftime('%Y-%m-%dT%H:%M:%SZ')`） |
+| ID 策略 | TEXT UUID（不用自增，方便未来跨设备同步） |
+| FTS 同步 | 触发器自动维护，不需要手动 rebuild |
+| Schema 版本 | `user_version` pragma，未来加字段时做迁移判断 |
+| CHECK 约束 | `type` 字段限制合法值 |
+| 单文件 | 一个 `~/.ctx/contexts.db` 管所有项目 |
 
 ## Skill 文件
 

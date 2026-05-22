@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import Breadcrumb from '../../../components/Breadcrumb.astro';
+import ShareLinks from '../../../components/ShareLinks.astro';
 import CodeCopy from '../../../components/islands/CodeCopy.astro';
 import { getCollection } from 'astro:content';
 
@@ -41,9 +42,12 @@ const { Content } = await article.render();
       <Content />
     </div>
 
-    <footer class="mt-12 pt-6 border-t border-border flex gap-4">
-      <a href="/en/articles" class="hover:text-accent">← Back to list</a>
-      {article.data.source_url && <a href={article.data.source_url} target="_blank" rel="noopener" class="hover:text-accent">View source ↗</a>}
+    <footer class="mt-12 pt-6 border-t border-border">
+      <ShareLinks url={Astro.url.href} title={article.data.title} />
+      <div class="mt-6 flex gap-4">
+        <a href="/en/articles" class="hover:text-accent">← Back to list</a>
+        {article.data.source_url && <a href={article.data.source_url} target="_blank" rel="noopener" class="hover:text-accent">View source ↗</a>}
+      </div>
     </footer>
   </article>
 

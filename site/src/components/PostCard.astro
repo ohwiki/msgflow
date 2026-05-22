@@ -14,7 +14,7 @@ const { title, slug, date, summary, cover, basePath = '/articles' } = Astro.prop
 {cover ? (
   <li class="my-6">
     <a href={`${basePath}/${slug}`} class="group flex gap-4 items-start">
-      <img src={cover} alt={title} class="shrink-0 w-32 h-20 sm:w-40 sm:h-24 object-cover rounded-lg border border-border" loading="lazy" />
+      <img src={cover} alt={title} width="160" height="96" class="shrink-0 w-32 h-20 sm:w-40 sm:h-24 object-cover rounded-lg border border-border" loading="lazy" decoding="async" />
       <div class="flex-1 min-w-0">
         <h3 class="text-lg font-medium text-accent decoration-dashed group-hover:underline underline-offset-4">{title}</h3>
         {summary && <p class="mt-1 text-sm opacity-70 line-clamp-2">{summary}</p>}

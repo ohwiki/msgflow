@@ -6,6 +6,10 @@ import { remarkEmbeds } from './src/plugins/remark-embeds.mjs';
 export default defineConfig({
   site: 'https://read.yourdomain.com',
   output: 'static',
+  compressHTML: true,
+  prefetch: {
+    prefetchAll: true,
+  },
   i18n: {
     defaultLocale: 'zh',
     locales: ['zh', 'en'],

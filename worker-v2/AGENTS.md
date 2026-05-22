@@ -269,20 +269,65 @@ class Fetcher(Protocol):
     def fetch(self, url: str) -> "FetchResult": ...
 ```
 
-### 注册表模式（和 TS 端一致）
+### 注册表模式（装饰器自动注册）
 
 ```python
-# 注册表：顺序决定优先级，最后一个是 fallback
-FETCHERS: list[Fetcher] = [WeixinFetcher(), FeishuFetcher(), JinaFetcher()]
-HANDLERS: list[CommandHandler] = [FetchHandler(), ListHandler(), RewriteHandler()]
-PUBLISHERS: list[Publisher] = [FeishuPublisher(), MowenPublisher()]
+from typing import Protocol
+from lib.interfaces import Fetcher, CommandHandler, Publisher, MessageChannel
 
-# 调度逻辑（永远不改）
+# ─── 注册表 ─────────────────────────────────
+FETCHERS: list[Fetcher] = []
+HANDLERS: list[CommandHandler] = []
+PUBLISHERS: list[Publisher] = []
+CHANNELS: list[MessageChannel] = []
+
+def register_fetcher(cls):
+    FETCHERS.append(cls())
+    return cls
+
+def register_handler(cls):
+    HANDLERS.append(cls())
+    return cls
+
+def register_publisher(cls):
+    PUBLISHERS.append(cls())
+    return cls
+
+def register_channel(cls):
+    CHANNELS.append(cls())
+    return cls
+```
+
+使用：
+
+```python
+from lib.registry import register_fetcher
+
+@register_fetcher
+class WeixinFetcher:
+    def can_handle(self, url: str) -> bool:
+        return "mp.weixin.qq.com" in url
+
+    def fetch(self, url: str) -> FetchResult:
+        ...
+```
+
+调度逻辑（永远不改）：
+
+```python
+from lib.registry import FETCHERS, HANDLERS
+
 def dispatch_fetch(url: str) -> FetchResult:
     for f in FETCHERS:
         if f.can_handle(url):
             return f.fetch(url)
     raise ValueError(f"No fetcher for {url}")
+
+def dispatch_command(command: Command, ctx: Context) -> Result:
+    for h in HANDLERS:
+        if h.can_handle(command):
+            return h.execute(command, ctx)
+    raise ValueError(f"Unknown command: {command.action}")
 ```
 
 ### 目录结构

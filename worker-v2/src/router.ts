@@ -14,6 +14,7 @@ import { handleTelegramWebhook } from "./handlers/webhook-telegram.js";
 import { handleFeishuWebhook } from "./handlers/webhook-feishu.js";
 import { pageSettings, handleSettingsSubmit } from "./handlers/settings.js";
 import { authMiddleware } from "./services/auth-service.js";
+import { handleImageResize } from "./handlers/image-resize.js";
 import { pageHome, pageFetch } from "./views/admin.js";
 
 type RouteHandler = (request: Request, env: Env, log: Logger) => Promise<Response>;
@@ -73,6 +74,7 @@ export async function router(
   if (!isAdmin) {
     const route = readerRoutes.find((r) => r.method === method && r.path === path);
     if (route) return route.handler(request, env, log);
+    if (method === "GET" && path.startsWith("/resize/")) return handleImageResize(request, env, log);
     if (method === "GET" && path.match(/^\/article\/[^/]+$/)) return apiArticleDetail(request, env, log);
     return Res.notFound();
   }

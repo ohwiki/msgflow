@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: feat/worker-content-system-v2
 
       - uses: actions/setup-python@v5
         with:
@@ -28,22 +30,19 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -q beautifulsoup4 markdownify
+          pip install -q requests beautifulsoup4 markdownify
           npm install -g prettier sql-formatter --silent
 
-      - name: Get config from Worker (one-time token, auto-expires)
+      - name: Get config from Worker
         id: config
         run: |
           CONFIG=$(curl -sf "${{ inputs.config_url }}")
-          if [ -z "$CONFIG" ]; then
-            echo "Failed to get config (token expired or invalid)"
-            exit 1
-          fi
-          echo "cf_account_id=$(echo $CONFIG | jq -r .cf_account_id)" >> $GITHUB_OUTPUT
-          echo "cf_api_token=$(echo $CONFIG | jq -r .cf_api_token)" >> $GITHUB_OUTPUT
+          if [ -z "$CONFIG" ]; then echo "Token expired"; exit 1; fi
           echo "callback_url=$(echo $CONFIG | jq -r .callback_url)" >> $GITHUB_OUTPUT
           echo "callback_secret=$(echo $CONFIG | jq -r .callback_secret)" >> $GITHUB_OUTPUT
           echo "r2_raw_key=$(echo $CONFIG | jq -r .r2_raw_key)" >> $GITHUB_OUTPUT
+          echo "cf_account_id=$(echo $CONFIG | jq -r .cf_account_id)" >> $GITHUB_OUTPUT
+          echo "cf_api_token=$(echo $CONFIG | jq -r .cf_api_token)" >> $GITHUB_OUTPUT
 
       - name: Download raw HTML from R2
         run: |
@@ -51,8 +50,8 @@ jobs:
             -H "Authorization: Bearer ${{ steps.config.outputs.cf_api_token }}" \
             "https://api.cloudflare.com/client/v4/accounts/${{ steps.config.outputs.cf_account_id }}/r2/buckets/msgflow-files/objects/${{ steps.config.outputs.r2_raw_key }}"
 
-      - name: Convert HTML to Markdown with code formatting
-        run: python3 scripts/format_article.py /tmp/raw.html /tmp/output.md
+      - name: Format article (unified CLI)
+        run: python scripts/cli.py format /tmp/raw.html /tmp/output.md
 
       - name: Callback to Worker
         run: |

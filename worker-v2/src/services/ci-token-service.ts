@@ -7,8 +7,9 @@
  * 3. Token is consumed (deleted) immediately after use
  */
 
+import { DEFAULTS } from "../lib/constants.js";
+
 const CI_TOKEN_PREFIX = "ci_token:";
-const CI_TOKEN_TTL_SECONDS = 600; // 10 minutes
 
 export interface CiTokenPayload {
   article_id: string;
@@ -34,7 +35,7 @@ export class CiTokenService {
     await this.kv.put(
       `${CI_TOKEN_PREFIX}${token}`,
       JSON.stringify({ ...payload, created_at: new Date().toISOString() }),
-      { expirationTtl: CI_TOKEN_TTL_SECONDS },
+      { expirationTtl: DEFAULTS.CI_TOKEN_TTL_SECONDS },
     );
     return token;
   }

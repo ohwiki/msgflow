@@ -6,11 +6,8 @@
  */
 
 import { ConfigRepository } from "../repositories/config-repository.js";
+import { DEFAULTS, HTTP_STATUS } from "../lib/constants.js";
 import { Res } from "../lib/response.js";
-import { HTTP_STATUS } from "../lib/constants.js";
-
-const SESSION_COOKIE = "msgflow_session";
-const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export class AuthService {
   private configRepo: ConfigRepository;
@@ -26,9 +23,8 @@ export class AuthService {
 
     if (hash !== config.password_hash) return null;
 
-    // Create session
     const token = crypto.randomUUID();
-    const expires = Date.now() + SESSION_TTL_MS;
+    const expires = Date.now() + DEFAULTS.SESSION_TTL_MS;
     await this.configRepo.setSession(token, { email: "admin", expires });
 
     return token;
@@ -61,18 +57,19 @@ export class AuthService {
 /** Extract session token from cookie header. */
 export function getSessionToken(request: Request): string | null {
   const cookie = request.headers.get("Cookie") ?? "";
-  const match = cookie.match(new RegExp(`${SESSION_COOKIE}=([^;]+)`));
+  const match = cookie.match(new RegExp(`${DEFAULTS.SESSION_COOKIE_NAME}=([^;]+)`));
   return match?.[1] ?? null;
 }
 
 /** Create Set-Cookie header for session. */
 export function sessionCookie(token: string): string {
-  return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${7 * 24 * 3600}`;
+  const maxAge = Math.floor(DEFAULTS.SESSION_TTL_MS / 1000);
+  return `${DEFAULTS.SESSION_COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}`;
 }
 
 /** Create expired cookie to clear session. */
 export function clearSessionCookie(): string {
-  return `${SESSION_COOKIE}=; Path=/; HttpOnly; Max-Age=0`;
+  return `${DEFAULTS.SESSION_COOKIE_NAME}=; Path=/; HttpOnly; Max-Age=0`;
 }
 
 /** Auth middleware — returns redirect Response if not authenticated, or null if OK. */
@@ -84,5 +81,5 @@ export async function authMiddleware(request: Request, env: Env): Promise<Respon
   const valid = await auth.validateSession(token);
   if (!valid) return Res.redirect("/login", HTTP_STATUS.MOVED);
 
-  return null; // Authenticated
+  return null;
 }

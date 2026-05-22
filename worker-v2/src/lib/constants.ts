@@ -80,6 +80,9 @@ export const DEFAULTS = {
   PROXY_TIMEOUT_MS: 10_000,
   PAGE_SIZE: 20,
   MAX_PAGE_SIZE: 100,
+  SESSION_TTL_MS: 7 * 24 * 60 * 60 * 1000,
+  SESSION_COOKIE_NAME: "msgflow_session",
+  CI_TOKEN_TTL_SECONDS: 600,
 } as const;
 
 // ─── Helper: detect source type from URL ────────────────

@@ -2,8 +2,8 @@
  * Fetch Service — URL routing via Fetcher registry + storage orchestration.
  */
 
-import { ARTICLE_STATUS, detectSourceType } from "../lib/constants.js";
-import { DuplicateError, FetchError } from "../lib/errors.js";
+import { ARTICLE_STATUS, SOURCE_TYPE, detectSourceType } from "../lib/constants.js";
+import { FetchError } from "../lib/errors.js";
 import type { Logger } from "../lib/log.js";
 import type { IArticleRepository } from "../types/repository.js";
 import type { IFileRepository } from "../types/repository.js";
@@ -74,7 +74,7 @@ export class FetchService {
     if (!result.hasCodeBlocks) {
       // For twitter/generic, content is already markdown from jina proxy
       // For weixin/feishu, use turndown to convert HTML → Markdown
-      const isAlreadyMarkdown = sourceType === "twitter" || sourceType === "web";
+      const isAlreadyMarkdown = sourceType === SOURCE_TYPE.TWITTER || sourceType === SOURCE_TYPE.WEB;
       if (isAlreadyMarkdown) {
         r2MdKey = await this.fileRepo.putMarkdown(articleId, result.html);
       } else {

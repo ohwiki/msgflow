@@ -8,14 +8,39 @@ import { FetchService } from "../services/fetch-service.js";
 import type { Logger } from "../lib/log.js";
 
 export async function apiFetch(request: Request, env: Env, log: Logger): Promise<Response> {
-  const body = await request.json<{ url?: string }>().catch(() => ({ url: undefined }));
-  const url = body.url?.trim();
+  const isHtmx = request.headers.get("HX-Request") === "true";
+  let url: string | undefined;
+
+  const ct = request.headers.get("Content-Type") || "";
+  if (ct.includes("application/json")) {
+    const body = await request.json<{ url?: string }>().catch(() => ({ url: undefined }));
+    url = body.url?.trim();
+  } else {
+    const form = await request.formData();
+    url = (form.get("url") as string)?.trim();
+  }
 
   if (!url || !url.startsWith("http")) {
+    if (isHtmx) return Res.html(`<div class="alert alert-error">请输入有效的 URL</div>`);
     throw new ValidationError("Invalid URL");
   }
 
-  const service = new FetchService(env, log);
-  const result = await service.fetchUrl(url);
-  return Res.json(result);
+  try {
+    const service = new FetchService(env, log);
+    const result = await service.fetchUrl(url);
+
+    if (isHtmx) {
+      return Res.html(`
+        <div class="alert alert-success">
+          <span>✅ 抓取成功：<strong>${result.title}</strong></span>
+          <span class="badge badge-sm">${result.sourceType}</span>
+          <span class="badge badge-sm badge-outline">${result.status}</span>
+        </div>
+      `);
+    }
+    return Res.json(result);
+  } catch (e: any) {
+    if (isHtmx) return Res.html(`<div class="alert alert-error">❌ 抓取失败：${e.message}</div>`);
+    throw e;
+  }
 }

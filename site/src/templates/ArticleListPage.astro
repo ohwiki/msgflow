@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostListItem from '../components/PostListItem.astro';
+import Pagination from '../components/Pagination.astro';
+import Breadcrumb from '../components/Breadcrumb.astro';
+import { t, type Locale } from '../i18n/index';
+
+interface Props {
+  locale: Locale;
+  page: any;
+}
+
+const { locale, page } = Astro.props;
+const prefix = locale === 'zh' ? '' : `/${locale}`;
+const pageTitle = page.currentPage === 1 ? t('ui.allPosts', locale) : `${t('nav.posts', locale)} - Page ${page.currentPage}`;
+---
+
+<BaseLayout title={pageTitle} locale={locale}>
+  <Breadcrumb items={[{ label: t('nav.posts', locale) }]} homeLabel={locale === 'en' ? 'Home' : '首页'} />
+  <section class="mx-auto max-w-app px-4 pb-6">
+    <h1 class="text-2xl font-semibold tracking-wide mb-8">{t('ui.allPosts', locale)}</h1>
+    {page.data.map((a) => (
+      <PostListItem title={a.data.title} slug={a.slug} date={a.data.date} summary={a.data.summary} tags={a.data.tags} basePath={`${prefix}/articles`} />
+    ))}
+    {page.data.length === 0 && <p class="py-8 opacity-60">{t('ui.noArticles', locale)}</p>}
+    <Pagination currentPage={page.currentPage} totalPages={page.lastPage} baseUrl={`${prefix}/articles`} />
+  </section>
+</BaseLayout>

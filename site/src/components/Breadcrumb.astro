@@ -1,15 +1,16 @@
 ---
 interface Props {
   items: { label: string; href?: string }[];
+  homeLabel?: string;
 }
 
-const { items } = Astro.props;
+const { items, homeLabel = '首页' } = Astro.props;
 ---
 
 <nav class="mx-auto mt-8 mb-6 w-full max-w-app px-4" aria-label="breadcrumb">
   <ul class="text-sm font-light [&>li]:inline [&>li:not(:last-child)>a]:hover:opacity-100">
     <li>
-      <a href="/" class="opacity-70 hover:opacity-100 transition-opacity">首页</a>
+      <a href="/" class="opacity-70 hover:opacity-100 transition-opacity">{homeLabel}</a>
       <span aria-hidden="true" class="mx-1">&raquo;</span>
     </li>
     {items.map((item, i) => (

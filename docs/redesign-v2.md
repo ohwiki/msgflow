@@ -398,6 +398,50 @@ fetch-service 识别来源类型
 
 零外部依赖，全链路毫秒级，Actions 仅保留 AI 改写等真正需要 Agent 运行时的任务。
 
+**浏览器插件（增值服务方向）：**
+
+技术栈：Browser Extension + WASM (SQLite + Biome/dprint + Turndown)
+
+插件无 CORS 限制、可后台运行、可访问页面 DOM，适合做以下增值场景：
+
+| 功能 | 说明 |
+|------|------|
+| 一键采集 | 右键菜单 / 快捷键，当前页面直接抓取为 Markdown |
+| 智能识别 | Content Script 自动识别文章正文区域，去除导航/广告 |
+| 本地知识库 | SQLite WASM 存储，全文搜索，离线可用 |
+| 阅读标注 | 高亮、批注、标签，存入本地 SQLite |
+| 代码格式化 | Biome/dprint WASM 在插件内完成，不依赖服务端 |
+| 批量采集 | 打开多个标签页批量抓取 |
+| 稍后阅读 | 保存到本地队列，离线阅读 |
+| 数据同步 | 可选同步到 Worker（调 `/api/fetch`），实现多设备共享 |
+| 导出 | 导出为 Markdown 文件 / Obsidian vault / Notion |
+| 剪藏增强 | 比 Web Clipper 更智能：自动去水印、修复图片、格式化代码 |
+
+架构：
+
+```
+浏览器插件
+├── Background Service Worker
+│   ├── SQLite WASM（本地存储）
+│   ├── Turndown（HTML → Markdown）
+│   ├── Biome WASM（代码格式化）
+│   └── Sync Engine（可选，同步到 Worker）
+├── Content Script
+│   ├── 文章正文识别
+│   ├── 右键菜单注入
+│   └── 高亮/标注 UI
+├── Popup
+│   ├── 最近采集列表
+│   ├── 搜索
+│   └── 快捷操作
+└── Options Page
+    ├── 同步配置（Worker URL + Token）
+    ├── 存储管理
+    └── 导出设置
+```
+
+与 Worker 的关系：插件是「采集前端」，Worker 是「处理后端」。插件本地完成轻量任务（抓取、格式化、存储），需要 AI 改写或发布时推给 Worker。两者通过 `/api/fetch` 接口对接。
+
 ## 已确认的决策
 
 **前端展示技术栈：** Astro + Tailwind + daisyUI

@@ -15,6 +15,7 @@ import { handleFeishuWebhook } from "./handlers/webhook-feishu.js";
 import { pageSettings, handleSettingsSubmit } from "./handlers/settings.js";
 import { authMiddleware } from "./services/auth-service.js";
 import { handleImageResize } from "./handlers/image-resize.js";
+import { apiShorten, handleShortRedirect } from "./handlers/short-url.js";
 import { pageHome, pageFetch } from "./views/admin.js";
 
 type RouteHandler = (request: Request, env: Env, log: Logger) => Promise<Response>;
@@ -45,6 +46,7 @@ const adminRoutes: Route[] = [
   { method: "GET", path: "/settings", handler: pageSettings },
   { method: "POST", path: "/settings", handler: handleSettingsSubmit },
   { method: "POST", path: "/api/fetch", handler: apiFetch },
+  { method: "POST", path: "/api/shorten", handler: apiShorten },
   { method: "GET", path: "/api/articles", handler: apiArticles },
 ];
 
@@ -69,6 +71,9 @@ export async function router(
   // Public routes (login, callback, ci-config) — no auth
   const pubRoute = publicRoutes.find((r) => r.method === method && r.path === path);
   if (pubRoute) return pubRoute.handler(request, env, log);
+
+  // Short URL redirect — no auth
+  if (method === "GET" && path.startsWith("/s/")) return handleShortRedirect(request, env, log);
 
   // Reader site — no auth
   if (!isAdmin) {

@@ -18,16 +18,15 @@ export async function triggerGitHubWorkflow(
   const repo = env.GITHUB_REPO || await env.KV.get("github_repo");
   if (!token || !repo) return false;
 
-  // Generate one-time CI token
+  // Generate two one-time CI tokens (config + download are separate)
   const ciTokenService = new CiTokenService(env.KV);
-  const ciToken = await ciTokenService.generate({
-    article_id: articleId,
-    r2_raw_key: r2RawKey,
-    created_at: new Date().toISOString(),
-  });
+  const payload = { article_id: articleId, r2_raw_key: r2RawKey, created_at: new Date().toISOString() };
+  const ciToken = await ciTokenService.generate(payload);
+  const dlToken = await ciTokenService.generate(payload);
 
   const workerUrl = env.WORKER_URL ?? "";
   const configUrl = `${workerUrl}/api/ci-config?token=${ciToken}`;
+  const downloadUrl = `${workerUrl}/api/ci-download?token=${dlToken}`;
 
   log.info("trigger_workflow", { articleId, repo });
 
@@ -44,6 +43,7 @@ export async function triggerGitHubWorkflow(
       inputs: {
         article_id: articleId,
         config_url: configUrl,
+        download_url: downloadUrl,
       },
     }),
     timeoutMs: 10_000,

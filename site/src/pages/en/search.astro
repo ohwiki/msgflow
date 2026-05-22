@@ -23,7 +23,7 @@ import Breadcrumb from '../../components/Breadcrumb.astro';
     pagefind = await import('/pagefind/pagefind.js');
     await pagefind.init();
   } catch (e) {
-    results.innerHTML = '<p class="opacity-60">Search index not ready. Run build first.</p>';
+    results.innerHTML = '<p class="opacity-60">Search index not ready. Run pnpm run build first.</p>';
     return;
   }
   input.addEventListener('input', async function() {

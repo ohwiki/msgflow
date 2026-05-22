@@ -380,6 +380,24 @@ fetch-service 识别来源类型
 
 ---
 
+## 未来优化方向
+
+**消除 Actions 依赖（长期目标）：**
+
+当前有代码块的文章必须走 Actions 是因为 Prettier/sql-formatter 无法在 Worker 里运行。以下任一条件满足即可将全部逻辑收回 Worker 内闭环：
+
+- Cloudflare 放宽 Worker bundle 大小限制（当前免费版 1MB，付费版 10MB，Prettier 打包约 2MB）
+- Prettier 发布 WASM 版本（可在 Worker V8 isolate 中运行）
+- 用 Workers AI 替代 Prettier 做代码格式化（当前已可行，但格式化质量不如 Prettier 稳定）
+
+一旦实现，架构简化为：
+
+```
+用户提交 URL → Worker 抓取 → Worker 清洗（含代码格式化）→ 存储 → 完成
+```
+
+零外部依赖，全链路毫秒级，Actions 仅保留 AI 改写等真正需要 Agent 运行时的任务。
+
 ## 已确认的决策
 
 **前端展示技术栈：** Astro + Tailwind + daisyUI

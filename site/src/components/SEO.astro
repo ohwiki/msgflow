@@ -13,11 +13,12 @@ const canonicalUrl = Astro.url.href;
 const siteName = 'msgflow';
 
 const schema = type === 'article'
-  ? { '@context': 'https://schema.org', '@type': 'Article', headline: title, description, datePublished: publishedTime?.toISOString(), keywords: tags.join(','), url: canonicalUrl }
+  ? { '@context': 'https://schema.org', '@type': 'Article', headline: title, description, datePublished: publishedTime?.toISOString(), keywords: tags.join(','), url: canonicalUrl, mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl } }
   : { '@context': 'https://schema.org', '@type': 'WebSite', name: siteName, description, url: canonicalUrl };
 ---
 
 <link rel="canonical" href={canonicalUrl} />
+<meta name="robots" content="index, follow" />
 <meta property="og:title" content={title} />
 <meta property="og:description" content={description} />
 <meta property="og:type" content={type} />

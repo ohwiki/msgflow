@@ -1,0 +1,14 @@
+<div class="card bg-base-100 shadow">
+  <div class="card-body">
+    <h2 class="card-title">抓取文章</h2>
+    <p class="text-sm text-base-content/60">输入 URL，支持微信公众号、飞书文档、Twitter/X、RSS、普通网页</p>
+    <form hx-post="/api/fetch" hx-target="#fetch-result" hx-indicator="#fetch-loading" class="mt-4">
+      <div class="join w-full">
+        <input type="url" name="url" placeholder="https://mp.weixin.qq.com/s/..." class="input input-bordered join-item flex-1" required/>
+        <button type="submit" class="btn btn-primary join-item">抓取</button>
+      </div>
+    </form>
+    <div id="fetch-loading" class="htmx-indicator mt-4"><span class="loading loading-spinner loading-sm"></span> 正在抓取...</div>
+    <div id="fetch-result" class="mt-4"></div>
+  </div>
+</div>

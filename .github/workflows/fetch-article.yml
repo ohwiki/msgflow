@@ -1,0 +1,67 @@
+name: Fetch & Format Article
+
+on:
+  workflow_dispatch:
+    inputs:
+      article_id:
+        description: 'Article ID'
+        required: true
+        type: string
+      config_url:
+        description: 'Worker config URL (one-time token)'
+        required: true
+        type: string
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: |
+          pip install -q beautifulsoup4 markdownify
+          npm install -g prettier sql-formatter --silent
+
+      - name: Get config from Worker (one-time token, auto-expires)
+        id: config
+        run: |
+          CONFIG=$(curl -sf "${{ inputs.config_url }}")
+          if [ -z "$CONFIG" ]; then
+            echo "Failed to get config (token expired or invalid)"
+            exit 1
+          fi
+          echo "cf_account_id=$(echo $CONFIG | jq -r .cf_account_id)" >> $GITHUB_OUTPUT
+          echo "cf_api_token=$(echo $CONFIG | jq -r .cf_api_token)" >> $GITHUB_OUTPUT
+          echo "callback_url=$(echo $CONFIG | jq -r .callback_url)" >> $GITHUB_OUTPUT
+          echo "callback_secret=$(echo $CONFIG | jq -r .callback_secret)" >> $GITHUB_OUTPUT
+          echo "r2_raw_key=$(echo $CONFIG | jq -r .r2_raw_key)" >> $GITHUB_OUTPUT
+
+      - name: Download raw HTML from R2
+        run: |
+          curl -sf -o /tmp/raw.html \
+            -H "Authorization: Bearer ${{ steps.config.outputs.cf_api_token }}" \
+            "https://api.cloudflare.com/client/v4/accounts/${{ steps.config.outputs.cf_account_id }}/r2/buckets/msgflow-files/objects/${{ steps.config.outputs.r2_raw_key }}"
+
+      - name: Convert HTML to Markdown with code formatting
+        run: python3 scripts/format_article.py /tmp/raw.html /tmp/output.md
+
+      - name: Callback to Worker
+        run: |
+          curl -sf -X POST "${{ steps.config.outputs.callback_url }}" \
+            -H "Content-Type: application/json" \
+            -d @- << EOF
+          {
+            "article_id": "${{ inputs.article_id }}",
+            "markdown": $(python3 -c "import json; print(json.dumps(open('/tmp/output.md').read()))"),
+            "secret": "${{ steps.config.outputs.callback_secret }}"
+          }
+          EOF

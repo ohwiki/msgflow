@@ -1,0 +1,29 @@
+<div class="stats shadow mb-4 w-full">
+  <div class="stat"><div class="stat-title">总文章</div><div class="stat-value text-primary">{{total}}</div></div>
+  <div class="stat"><div class="stat-title">已清洗</div><div class="stat-value text-success">{{cleanedCount}}</div></div>
+  <div class="stat"><div class="stat-title">已发布</div><div class="stat-value text-accent">{{publishedCount}}</div></div>
+</div>
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+  <table class="table table-sm">
+    <thead><tr><th>标题</th><th>来源</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>
+    <tbody>
+      {{#articles}}
+      <tr>
+        <td class="max-w-xs truncate"><a href="/api/articles/{{id}}" class="link link-hover">{{title}}</a></td>
+        <td><span class="badge badge-ghost badge-sm">{{source_type}}</span></td>
+        <td>
+          {{#isRaw}}<span class="badge badge-warning badge-sm">raw</span>{{/isRaw}}
+          {{#isCleaned}}<span class="badge badge-info badge-sm">cleaned</span>{{/isCleaned}}
+          {{#isPublished}}<span class="badge badge-success badge-sm">published</span>{{/isPublished}}
+        </td>
+        <td class="text-xs text-base-content/60">{{fetched_at_short}}</td>
+        <td>
+          {{#isCleaned}}<button class="btn btn-success btn-xs" hx-post="/api/articles/{{id}}/publish" hx-swap="outerHTML">发布</button>{{/isCleaned}}
+          <button class="btn btn-error btn-xs btn-outline" hx-delete="/api/articles/{{id}}" hx-confirm="确定删除？" hx-target="closest tr" hx-swap="outerHTML">删除</button>
+        </td>
+      </tr>
+      {{/articles}}
+      {{^articles}}<tr><td colspan="5" class="text-center text-base-content/40 py-8">暂无文章，去抓取一篇吧</td></tr>{{/articles}}
+    </tbody>
+  </table>
+</div>

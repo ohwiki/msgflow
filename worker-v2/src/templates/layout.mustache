@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh" data-theme="light">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>{{title}} - msgflow</title>
+  <link href="{{cdnDaisyui}}" rel="stylesheet" type="text/css"/>
+  <link href="{{cdnDaisyuiThemes}}" rel="stylesheet" type="text/css"/>
+  <script src="{{cdnTailwind}}"></script>
+  <script src="{{cdnHtmx}}"></script>
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('theme')||'light')</script>
+</head>
+<body>
+  <div class="drawer lg:drawer-open">
+    <input id="drawer-toggle" type="checkbox" class="drawer-toggle"/>
+    <div class="drawer-content bg-base-200 min-h-screen">
+      <div class="navbar bg-base-100 lg:hidden">
+        <label for="drawer-toggle" class="btn btn-ghost btn-square">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </label>
+        <span class="text-lg font-bold ml-2">msgflow</span>
+      </div>
+      <div class="p-4 md:p-6">{{{content}}}</div>
+    </div>
+    <div class="drawer-side">
+      <label for="drawer-toggle" class="drawer-overlay"></label>
+      <aside class="bg-base-100 w-64 min-h-screen p-4 flex flex-col">
+        <div class="text-xl font-bold mb-6 px-2">📄 msgflow</div>
+        <ul class="menu flex-1">
+          <li><a href="/">📋 文章列表</a></li>
+          <li><a href="/fetch">🔗 抓取文章</a></li>
+          <li><a href="/settings">⚙️ 设置</a></li>
+        </ul>
+        <div class="pt-4 border-t border-base-300">
+          <select class="select select-sm select-bordered w-full" onchange="document.documentElement.setAttribute('data-theme',this.value);localStorage.setItem('theme',this.value)">
+            <option disabled selected>🎨 主题</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+            <option value="cupcake">Cupcake</option>
+            <option value="nord">Nord</option>
+            <option value="dracula">Dracula</option>
+            <option value="night">Night</option>
+            <option value="sunset">Sunset</option>
+            <option value="cyberpunk">Cyberpunk</option>
+            <option value="retro">Retro</option>
+            <option value="garden">Garden</option>
+          </select>
+        </div>
+      </aside>
+    </div>
+  </div>
+</body>
+</html>

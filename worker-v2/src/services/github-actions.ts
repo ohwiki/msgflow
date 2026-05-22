@@ -14,8 +14,8 @@ export async function triggerGitHubWorkflow(
   r2RawKey: string,
   log: Logger,
 ): Promise<boolean> {
-  const token = env.GITHUB_TOKEN;
-  const repo = env.GITHUB_REPO;
+  const token = env.GITHUB_TOKEN || await env.KV.get("github_token");
+  const repo = env.GITHUB_REPO || await env.KV.get("github_repo");
   if (!token || !repo) return false;
 
   // Generate one-time CI token

@@ -297,6 +297,55 @@ Kiro CLI 的 hooks 机制和 claude-mem 格式不兼容，但 Kiro 原生支持 
 
 **不需要 hooks 适配，不需要改 Kiro 源码，零侵入。**
 
+### Kiro CLI Hooks 格式（待验证）
+
+Kiro CLI 支持 hooks，格式如下（写在 `~/.kiro/agents/default.json` 的 `hooks` 字段）：
+
+```json
+{
+  "hooks": {
+    "agentSpawn": [
+      { "command": "ctx load --auto", "timeout": 10 }
+    ],
+    "postToolUse": [
+      { "matcher": "*", "command": "ctx observe", "timeout": 5 }
+    ],
+    "stop": [
+      { "command": "ctx save --auto", "timeout": 10 }
+    ]
+  }
+}
+```
+
+Hook 行为：
+- 接收 JSON via STDIN（包含 `hook_event_name`、`cwd`、`tool_name`、`tool_input` 等）
+- STDOUT 输出会注入到 Agent 上下文
+- Exit code 0 = 成功，其他 = 警告
+
+**待验证：**
+- [ ] hooks 是否需要重启 Kiro CLI 才生效（会话中途加的不触发）
+- [ ] `command` 字段是否支持完整路径（如 `python /path/to/ctx.py`）
+- [ ] STDIN 的 JSON 格式是否和 Claude Code 一致
+- [ ] 验证方法：配一个简单的 `echo "hook fired" >> /tmp/kiro-hooks.log`，新开会话看日志
+
+**终极方案（hooks 验证通过后）：**
+
+```json
+{
+  "hooks": {
+    "agentSpawn": [
+      { "command": "ctx load --auto --format inject", "timeout": 15 }
+    ],
+    "stop": [
+      { "command": "ctx save --auto --stdin", "timeout": 15 }
+    ]
+  }
+}
+```
+
+`ctx load --auto` 自动检测当前目录对应的项目，输出上下文到 STDOUT 注入会话。
+`ctx save --auto --stdin` 从 STDIN 读取 `assistant_response`，提取关键信息保存。
+
 | Agent | 集成方式 | Skill 位置 |
 |-------|---------|-----------|
 | Kiro CLI | **Skill（推荐）** | `~/.kiro/skills/context-memory/SKILL.md` |

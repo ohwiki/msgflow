@@ -1,0 +1,309 @@
+# Context Manager — AI Agent 持久化记忆系统
+
+## 问题
+
+AI Agent 会话结束后上下文丢失。新会话需要重新解释项目背景、已做决策、当前进度。浪费时间且容易遗漏。
+
+## 解决方案
+
+一个 CLI 工具 `ctx`，配合 Skill 文件，让 AI Agent 在会话间持久化和恢复上下文。数据存本地 SQLite。
+
+## 核心流程
+
+```
+会话开始：AI 执行 ctx load <project> → 读取上下文 → 知道从哪继续
+会话中：AI 执行 ctx append <project> --decision "..." → 实时记录关键决策
+会话结束：AI 执行 ctx save <project> --summary "..." → 保存当前状态
+新会话：AI 执行 ctx load <project> → 无缝继续
+```
+
+## 技术栈
+
+- 语言：Python（和 msgflow scripts 统一）
+- 存储：SQLite（本地文件 `~/.ctx/contexts.db`）
+- 接口：CLI（argparse）
+- 集成：Skill 文件（SKILL.md）让 AI Agent 知道何时/如何调用
+
+## CLI 命令设计
+
+### ctx init
+
+初始化数据库（首次使用自动执行）。
+
+```bash
+ctx init
+# 创建 ~/.ctx/contexts.db
+```
+
+### ctx save \<project\>
+
+保存或更新项目上下文。
+
+```bash
+ctx save "msgflow重构" \
+  --summary "Phase 0-2 完成，Worker 已部署，Astro 骨架搭好" \
+  --pending "Phase 3 主题迁移, Phase 4 AI改写" \
+  --files "worker-v2/src/**, site/src/**"
+```
+
+参数：
+- `project`（必填）：项目名称，作为唯一标识
+- `--summary`（必填）：当前状态一句话描述
+- `--pending`：待做事项，逗号分隔
+- `--files`：涉及的关键文件路径，逗号分隔
+- `--decisions`：本次会话的关键决策，逗号分隔
+
+### ctx load \<project\>
+
+读取项目上下文，输出结构化文本供 AI 阅读。
+
+```bash
+ctx load "msgflow重构"
+```
+
+输出格式：
+
+```
+# 项目上下文：msgflow重构
+
+## 当前状态
+Phase 0-2 完成，Worker 已部署，Astro 骨架搭好
+
+## 关键决策
+1. [2026-05-22] 技术栈：TS + Mustache + daisyUI + HTMX（对齐 wucurcheck）
+2. [2026-05-22] 存储：KV + D1 + R2 三层
+3. [2026-05-22] 前端展示：Astro（非 Hugo），因为 AI 写 TSX 质量更高
+4. [2026-05-22] 图片：Telegram 永久存储 + R2 缓存层
+5. [2026-05-22] 部署：Cloudflare Pages（主）+ GitHub Pages（备）
+
+## 已完成
+- Phase 0: 项目骨架 + D1/R2/KV
+- Phase 1: 抓取能力（5 fetcher + 3 repo + handlers + UI）
+- Phase 2: GitHub/GitLab Actions + callback + 一次性 token
+- Phase 5: Telegram + 飞书 webhook
+- Astro 展示站骨架
+- 认证（密码 + Google OAuth）
+- turndown 清洗
+
+## 待做
+- Phase 3 主题迁移（hugo-theme-paper → Astro）
+- Phase 4 AI 改写（NullClaw 集成）
+- Phase 6 发布能力
+- Phase 7 知识库
+
+## 关键文件
+- worker-v2/src/** — Worker 核心代码
+- worker-v2/AGENTS.md — 编码规范
+- site/src/** — Astro 展示站
+- scripts/lib/** — Python 接口 + 注册表
+- docs/redesign-v2.md — 设计文档
+
+## 最近变更
+- [2026-05-22 16:00] 加入 Python Protocol + 装饰器注册表模式
+- [2026-05-22 15:50] Telegram/飞书 webhook 迁移完成
+- [2026-05-22 15:30] Google OAuth 接入
+
+## 备注
+- 旧版 worker/ 目录保留做参考，不再修改
+- 所有 Python 代码遵循 Protocol 接口 + 装饰器注册
+- Worker 能做的不推给 Actions
+```
+
+### ctx list
+
+列出所有项目。
+
+```bash
+ctx list
+```
+
+输出：
+
+```
+项目                 最后更新          状态摘要
+msgflow重构          2026-05-22 16:00  Phase 0-2 完成，Worker 已部署
+hugo-theme-paper     2026-05-20 14:00  SEO 优化完成，待发布
+wucurcheck           2026-05-21 12:00  v4.1 注册功能开发中
+```
+
+### ctx append \<project\>
+
+追加一条记录（不覆盖，增量添加）。
+
+```bash
+# 追加决策
+ctx append "msgflow重构" --decision "浏览器插件作为增值服务方向"
+
+# 追加进度
+ctx append "msgflow重构" --progress "Phase 5 Telegram/飞书 webhook 完成"
+
+# 追加备注
+ctx append "msgflow重构" --note "Prettier WASM 版本出来后可以消除 Actions 依赖"
+
+# 追加待做
+ctx append "msgflow重构" --pending "实现 /api/ci-download 端点"
+```
+
+### ctx delete \<project\>
+
+删除项目上下文。
+
+```bash
+ctx delete "msgflow重构"
+```
+
+### ctx export \<project\>
+
+导出为 Markdown 文件（可提交到 Git）。
+
+```bash
+ctx export "msgflow重构" > .ctx/msgflow重构.md
+```
+
+### ctx search \<keyword\>
+
+跨项目搜索上下文。
+
+```bash
+ctx search "daisyUI"
+# 在所有项目的决策/备注/摘要中搜索
+```
+
+## SQLite Schema
+
+```sql
+-- 数据库位置：~/.ctx/contexts.db
+
+CREATE TABLE IF NOT EXISTS projects (
+  id TEXT PRIMARY KEY,                -- 项目名（如 "msgflow重构"）
+  summary TEXT NOT NULL DEFAULT '',   -- 当前状态一句话
+  pending TEXT DEFAULT '[]',          -- JSON array: 待做事项
+  files TEXT DEFAULT '[]',            -- JSON array: 关键文件路径
+  created_at TEXT DEFAULT (datetime('now')),
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS entries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id TEXT NOT NULL,
+  type TEXT NOT NULL,                 -- "decision" | "progress" | "note" | "pending"
+  content TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_entries_project ON entries(project_id);
+CREATE INDEX IF NOT EXISTS idx_entries_type ON entries(project_id, type);
+
+-- 全文搜索
+CREATE VIRTUAL TABLE IF NOT EXISTS entries_fts USING fts5(content, content=entries, content_rowid=id);
+```
+
+## Skill 文件
+
+放在 `~/.kiro/skills/context-manager/SKILL.md`（或对应 Agent 的 skill 目录）：
+
+```markdown
+---
+name: context-manager
+description: |
+  AI Agent 持久化记忆系统。每次会话开始时 load 上下文，结束前 save 上下文。
+  确保跨会话的项目进度、决策、待做事项不丢失。
+  触发词：读取上下文、保存上下文、继续项目、ctx。
+---
+
+# Context Manager
+
+## 何时使用
+
+1. **会话开始时**：如果用户提到一个项目名，先执行 `ctx load <项目名>` 读取上下文
+2. **做出关键决策时**：执行 `ctx append <项目名> --decision "决策内容"`
+3. **完成一个任务时**：执行 `ctx append <项目名> --progress "完成内容"`
+4. **会话结束前**：执行 `ctx save <项目名> --summary "当前状态"`
+5. **用户说「继续」时**：执行 `ctx load <项目名>` 恢复上下文
+
+## 命令
+
+```bash
+ctx load <project>                          # 读取上下文（会话开始）
+ctx save <project> --summary "..."          # 保存上下文（会话结束）
+ctx append <project> --decision "..."       # 追加决策
+ctx append <project> --progress "..."       # 追加进度
+ctx append <project> --note "..."           # 追加备注
+ctx append <project> --pending "..."        # 追加待做
+ctx list                                    # 列出所有项目
+ctx search <keyword>                        # 搜索
+```
+
+## 规则
+
+- load 输出的内容直接作为当前会话的背景知识
+- 不要让用户重复解释已经在上下文里的信息
+- 每次会话至少 save 一次（结束前）
+- 关键决策必须实时 append，不要等到会话结束
+- summary 要简洁（一句话），详细信息放 decisions/notes
+```
+
+## 目录结构
+
+```
+context-manager/
+├── ctx.py                  ← CLI 入口（argparse）
+├── lib/
+│   ├── __init__.py
+│   ├── db.py              ← SQLite 操作（CRUD + FTS）
+│   ├── formatter.py       ← 输出格式化（Markdown 结构）
+│   └── models.py          ← dataclass 定义
+├── tests/
+│   ├── test_db.py
+│   └── test_cli.py
+├── SKILL.md               ← AI Agent skill 文件
+├── pyproject.toml          ← 打包配置（pip install 后全局可用 ctx 命令）
+└── README.md
+```
+
+## pyproject.toml
+
+```toml
+[project]
+name = "ctx-manager"
+version = "0.1.0"
+description = "AI Agent persistent context manager"
+requires-python = ">=3.10"
+
+[project.scripts]
+ctx = "ctx:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+```
+
+## 安装后使用
+
+```bash
+# 安装
+pip install -e .
+
+# 或者直接运行
+python ctx.py load "msgflow重构"
+```
+
+## 与现有工具的集成
+
+| Agent | Skill 位置 | 触发方式 |
+|-------|-----------|---------|
+| Kiro CLI | `~/.kiro/skills/context-manager/SKILL.md` | 自动识别 |
+| Hermes | `~/.hermes/skills/context-manager/SKILL.md` | 自动识别 |
+| Claude Code | `.claude/skills/context-manager/SKILL.md` | 项目级 |
+| Codex | `.codex/skills/context-manager/SKILL.md` | 项目级 |
+
+## 验收标准
+
+1. `ctx save` + `ctx load` 能正确保存和恢复完整上下文
+2. `ctx append` 追加的记录按时间排序，不丢失
+3. `ctx search` 能跨项目搜索关键词
+4. `ctx load` 的输出格式清晰，AI 读取后能理解项目全貌
+5. SQLite 文件损坏时有错误提示，不 crash
+6. 首次使用自动初始化数据库，无需手动 init
+7. Skill 文件放入对应目录后，AI Agent 能自动识别并使用

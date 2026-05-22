@@ -313,6 +313,13 @@ fetch-service 识别来源类型
    - 集成 skills
    - 改写触发 + 结果回写
 
+6. **Phase 5：聊天集成（Telegram / 飞书）**
+   - Telegram Webhook handler（发 URL 触发抓取）
+   - 飞书 Webhook handler（同上）
+   - 命令解析（/fetch URL、/list、/help）
+   - 频率限制
+   - 抓取完成后回复消息通知
+
 ---
 
 ## 已确认的决策

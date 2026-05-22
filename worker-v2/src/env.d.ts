@@ -18,9 +18,12 @@ interface Env {
   // Feishu
   FEISHU_APP_ID?: string;
   FEISHU_APP_SECRET?: string;
-  // Telegram (image storage)
+  // Telegram (image storage + webhook)
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHANNEL_ID?: string;
+  TELEGRAM_WEBHOOK_SECRET?: string;
+  // Feishu (webhook verification)
+  FEISHU_VERIFICATION_TOKEN?: string;
   // Git repo (markdown storage)
   GIT_REPO_ENABLED?: string;
   GIT_PROVIDER?: string;       // "github" | "gitlab"

@@ -35,6 +35,7 @@ export const EXTERNAL_URL = {
   FEISHU_TOKEN_ENDPOINT: "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal",
   GITHUB_API: "https://api.github.com",
   GITLAB_API: "https://gitlab.com/api/v4",
+  TELEGRAM_API: "https://api.telegram.org",
 } as const;
 
 // ─── URL Match Patterns (used by fetchers + detectSourceType) ──

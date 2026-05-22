@@ -7,24 +7,16 @@ interface Props {
   width?: number;
   height?: number;
   class?: string;
-  fit?: 'cover' | 'contain' | 'scale-down';
 }
 
-const { src, alt, width, height, class: className, fit = 'cover' } = Astro.props;
+const { src, alt, width, height, class: className } = Astro.props;
 
-// 如果是完整 URL 直接用，否则拼接 R2 CDN
+// 完整 URL 直接用，否则拼接 R2 CDN
 const fullSrc = src.startsWith('http') ? src : `${IMAGE_CDN}/${src}`;
-
-// Cloudflare Image Resizing URL 格式: /cdn-cgi/image/w=WIDTH,h=HEIGHT,fit=FIT/IMAGE_URL
-// 仅当有 width/height 且图片在自己的域名时启用
-const isOwnCdn = fullSrc.startsWith(IMAGE_CDN);
-const optimizedSrc = isOwnCdn && width
-  ? `${IMAGE_CDN}/cdn-cgi/image/w=${width}${height ? `,h=${height}` : ''},fit=${fit},format=auto,quality=80/${src}`
-  : fullSrc;
 ---
 
 <img
-  src={optimizedSrc}
+  src={fullSrc}
   alt={alt}
   width={width}
   height={height}

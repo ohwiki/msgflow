@@ -1,0 +1,36 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const articles = (await getCollection('articles'))
+  .filter((a) => !a.data.draft)
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 10);
+---
+
+<BaseLayout title="首页">
+  <div class="max-w-3xl mx-auto">
+    <h1 class="text-3xl font-bold mb-2">最新文章</h1>
+    <p class="text-base-content/60 mb-8">内容采集 · 清洗 · 展示</p>
+
+    <div class="flex flex-col gap-4">
+      {articles.map((article) => (
+        <a href={`/articles/${article.slug}`} class="card bg-base-100 shadow hover:shadow-md transition-shadow">
+          <div class="card-body p-5">
+            <h2 class="card-title text-lg">{article.data.title}</h2>
+            {article.data.summary && <p class="text-sm text-base-content/70">{article.data.summary}</p>}
+            <div class="flex items-center gap-3 mt-2">
+              <span class="text-xs text-base-content/50">{article.data.date.toLocaleDateString('zh-CN')}</span>
+              {article.data.source_type && <span class="badge badge-ghost badge-xs">{article.data.source_type}</span>}
+              {article.data.tags.map((tag) => <span class="badge badge-outline badge-xs">{tag}</span>)}
+            </div>
+          </div>
+        </a>
+      ))}
+    </div>
+
+    {articles.length === 0 && (
+      <div class="text-center py-16 text-base-content/40">暂无文章</div>
+    )}
+  </div>
+</BaseLayout>

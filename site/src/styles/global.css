@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* Prose styles for article content */
+.prose pre {
+  border-radius: var(--rounded-box);
+  overflow-x: auto;
+}
+
+.prose code {
+  font-size: 0.875rem;
+}
+
+.prose img {
+  border-radius: var(--rounded-box);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}

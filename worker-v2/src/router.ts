@@ -8,6 +8,8 @@ import { apiFetch } from "./handlers/api-fetch.js";
 import { apiArticles, apiArticleDetail, apiArticleDelete, apiArticlePublish } from "./handlers/api-articles.js";
 import { apiCallback } from "./handlers/api-callback.js";
 import { apiCiConfig } from "./handlers/api-ci-config.js";
+import { handleLoginPage, handleLoginSubmit, handleLogout } from "./handlers/auth.js";
+import { authMiddleware } from "./services/auth-service.js";
 import { pageHome, pageFetch } from "./views/admin.js";
 
 type RouteHandler = (request: Request, env: Env, log: Logger) => Promise<Response>;
@@ -18,16 +20,25 @@ interface Route {
   handler: RouteHandler;
 }
 
+// Public routes (no auth required)
+const publicRoutes: Route[] = [
+  { method: "GET", path: "/login", handler: handleLoginPage },
+  { method: "POST", path: "/login", handler: handleLoginSubmit },
+  { method: "GET", path: "/logout", handler: handleLogout },
+  { method: "POST", path: "/api/callback", handler: apiCallback },
+  { method: "GET", path: "/api/ci-config", handler: apiCiConfig },
+];
+
+// Protected admin routes (auth required)
 const adminRoutes: Route[] = [
   { method: "GET", path: "/", handler: pageHome },
   { method: "GET", path: "/fetch", handler: pageFetch },
   { method: "POST", path: "/api/fetch", handler: apiFetch },
-  { method: "POST", path: "/api/callback", handler: apiCallback },
-  { method: "GET", path: "/api/ci-config", handler: apiCiConfig },
   { method: "GET", path: "/api/articles", handler: apiArticles },
 ];
 
-const publicRoutes: Route[] = [
+// Public reader routes (read.xxx.com, no auth)
+const readerRoutes: Route[] = [
   { method: "GET", path: "/api/articles", handler: apiArticles },
 ];
 
@@ -43,20 +54,30 @@ export async function router(
   const isAdmin = adminHost
     ? hostname === adminHost
     : hostname.startsWith("admin") || hostname.includes("localhost") || hostname.includes("127.0.0.1");
-  const routes = isAdmin ? adminRoutes : publicRoutes;
 
-  const route = routes.find((r) => r.method === method && r.path === path);
+  // Public routes (login, callback, ci-config) — no auth
+  const pubRoute = publicRoutes.find((r) => r.method === method && r.path === path);
+  if (pubRoute) return pubRoute.handler(request, env, log);
+
+  // Reader site — no auth
+  if (!isAdmin) {
+    const route = readerRoutes.find((r) => r.method === method && r.path === path);
+    if (route) return route.handler(request, env, log);
+    if (method === "GET" && path.match(/^\/article\/[^/]+$/)) return apiArticleDetail(request, env, log);
+    return Res.notFound();
+  }
+
+  // Admin routes — require auth
+  const denied = await authMiddleware(request, env);
+  if (denied) return denied;
+
+  const route = adminRoutes.find((r) => r.method === method && r.path === path);
   if (route) return route.handler(request, env, log);
 
-  // Dynamic routes
-  if (isAdmin) {
-    if (method === "GET" && path.match(/^\/api\/articles\/[^/]+$/)) return apiArticleDetail(request, env, log);
-    if (method === "DELETE" && path.match(/^\/api\/articles\/[^/]+$/)) return apiArticleDelete(request, env, log);
-    if (method === "POST" && path.match(/^\/api\/articles\/[^/]+\/publish$/)) return apiArticlePublish(request, env, log);
-  }
-  if (!isAdmin) {
-    if (method === "GET" && path.match(/^\/article\/[^/]+$/)) return apiArticleDetail(request, env, log);
-  }
+  // Dynamic admin routes
+  if (method === "GET" && path.match(/^\/api\/articles\/[^/]+$/)) return apiArticleDetail(request, env, log);
+  if (method === "DELETE" && path.match(/^\/api\/articles\/[^/]+$/)) return apiArticleDelete(request, env, log);
+  if (method === "POST" && path.match(/^\/api\/articles\/[^/]+\/publish$/)) return apiArticlePublish(request, env, log);
 
   return Res.notFound();
 }

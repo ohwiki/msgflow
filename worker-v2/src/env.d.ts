@@ -34,3 +34,21 @@ declare module "*.mustache" {
   const content: string;
   export default content;
 }
+
+declare module "turndown" {
+  interface Options {
+    headingStyle?: "setext" | "atx";
+    codeBlockStyle?: "indented" | "fenced";
+    bulletListMarker?: "-" | "+" | "*";
+  }
+  interface Rule {
+    filter: string | string[] | ((node: any) => boolean);
+    replacement: (content: string, node: any) => string;
+  }
+  class TurndownService {
+    constructor(options?: Options);
+    turndown(html: string): string;
+    addRule(key: string, rule: Rule): this;
+  }
+  export default TurndownService;
+}

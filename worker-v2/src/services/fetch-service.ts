@@ -15,6 +15,7 @@ import { rssFetcher } from "../fetchers/rss.js";
 import { genericFetcher } from "../fetchers/generic.js";
 import { ArticleRepository } from "../repositories/article-repository.js";
 import { FileRepository } from "../repositories/file-repository.js";
+import { CleanService } from "./clean-service.js";
 
 /** Ordered fetcher registry — first match wins, generic is always last. */
 const FETCHERS: Fetcher[] = [weixinFetcher, feishuFetcher, twitterFetcher, rssFetcher, genericFetcher];
@@ -67,9 +68,31 @@ export class FetchService {
     const r2RawKey = await this.fileRepo.putRaw(articleId, result.html);
 
     // Determine if we can clean immediately (no code blocks, or already markdown from proxy)
-    const canCleanNow = !result.hasCodeBlocks;
-    const r2MdKey = canCleanNow ? await this.fileRepo.putMarkdown(articleId, result.html) : null;
-    const status = canCleanNow ? ARTICLE_STATUS.CLEANED : ARTICLE_STATUS.RAW;
+    let r2MdKey: string | null = null;
+    let status: string = ARTICLE_STATUS.RAW;
+
+    if (!result.hasCodeBlocks) {
+      // For twitter/generic, content is already markdown from jina proxy
+      // For weixin/feishu, use turndown to convert HTML → Markdown
+      const isAlreadyMarkdown = sourceType === "twitter" || sourceType === "web";
+      if (isAlreadyMarkdown) {
+        r2MdKey = await this.fileRepo.putMarkdown(articleId, result.html);
+      } else {
+        const cleanService = new CleanService(this.env, this.log);
+        // Store first, then clean (cleanArticle reads from R2)
+        await this.articleRepo.create({
+          id: articleId, url, title: result.title, author: result.author,
+          source_type: sourceType, source_name: result.sourceName,
+          status: ARTICLE_STATUS.RAW, tags: "[]", summary: "",
+          r2_raw_key: r2RawKey, r2_md_key: null,
+          fetched_at: new Date().toISOString(), published_at: null,
+        });
+        await cleanService.cleanArticle(articleId);
+        this.log.info("fetch_done", { articleId, sourceType, status: ARTICLE_STATUS.CLEANED });
+        return { articleId, title: result.title, sourceType, hasCodeBlocks: false, status: ARTICLE_STATUS.CLEANED };
+      }
+      status = ARTICLE_STATUS.CLEANED;
+    }
 
     // Persist to D1
     await this.articleRepo.create({

@@ -464,6 +464,55 @@ Worker（AI 处理 + 发布）
 
 数据模型：插件 SQLite 存 llmwiki 的 `wiki/index.md` + 各条目 Markdown，Worker 端 AI 做知识关联和回写，结果同步回插件本地。实现「采集即入库，阅读即学习」的闭环。
 
+**Wiki CLI + SQLite 加速层（100+ 页面后启用）：**
+
+当知识库超过 100 个页面时，AI Agent 直接读文件做搜索/关联变慢（O(n) 遍历）。此时引入 SQLite 作为索引加速层，通过 CLI 给 AI Agent 使用：
+
+```bash
+# AI Agent 通过 CLI 操作知识库（替代直接读写文件）
+msgflow wiki search "Cloudflare Worker 限制"     # FTS5 全文搜索，毫秒级
+msgflow wiki related "article-a"                  # 查哪些页面引用了它
+msgflow wiki tags "AI,自动化"                     # 按标签筛选
+msgflow wiki recent --limit 10                    # 最近更新的页面
+msgflow wiki read "wiki/concept-x.md"            # 读单页
+msgflow wiki write "wiki/new-page.md" < content  # 写入（SQLite + 文件双写）
+msgflow wiki ingest "raw/new-article.md"         # 摄入新素材触发 AI 处理
+msgflow wiki stats                               # 知识库统计（页面数、关联数、覆盖率）
+```
+
+SQLite schema：
+
+```sql
+CREATE VIRTUAL TABLE wiki_fts USING fts5(path, title, content, tags);
+
+CREATE TABLE wiki_pages (
+  path TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  content TEXT NOT NULL,
+  tags TEXT DEFAULT '[]',
+  updated_at TEXT,
+  word_count INTEGER DEFAULT 0
+);
+
+CREATE TABLE wiki_links (
+  source_path TEXT NOT NULL,
+  target_path TEXT NOT NULL,
+  context TEXT,  -- 引用时的上下文句子
+  PRIMARY KEY (source_path, target_path)
+);
+```
+
+性能对比（100 页面时）：
+
+| 操作 | 直接读文件 | SQLite CLI |
+|------|-----------|-----------|
+| 全文搜索 | ~500ms (grep) | ~5ms (FTS5) |
+| 查关联页面 | ~300ms (正则扫描) | ~1ms (索引查询) |
+| 按标签筛选 | ~200ms (解析 frontmatter) | ~2ms |
+| 读单页 | ~1ms | ~1ms |
+
+触发条件：`wiki/` 目录下 .md 文件超过 100 个时，自动建议启用 SQLite 加速。文件仍然是 source of truth，SQLite 是派生索引（可随时从文件重建）。
+
 ## 已确认的决策
 
 **前端展示技术栈：** Astro + Tailwind + daisyUI

@@ -323,10 +323,11 @@ Hook 行为：
 - Exit code 0 = 成功，其他 = 警告
 
 **待验证：**
-- [ ] hooks 是否需要重启 Kiro CLI 才生效（会话中途加的不触发）
-- [ ] `command` 字段是否支持完整路径（如 `python /path/to/ctx.py`）
-- [ ] STDIN 的 JSON 格式是否和 Claude Code 一致
-- [ ] 验证方法：配一个简单的 `echo "hook fired" >> /tmp/kiro-hooks.log`，新开会话看日志
+- [x] hooks 是否需要重启 Kiro CLI 才生效 → 已验证：重启后也不生效
+- [x] Kiro CLI 是否实际执行 hooks → **已验证：当前版本不执行（文档有但功能未上线）**
+- [ ] 未来版本修复后再切换到 hooks 方案
+
+**当前结论：Kiro CLI hooks 不可用，走 Skill + ctx CLI 方案。**
 
 **终极方案（hooks 验证通过后）：**
 

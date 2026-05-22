@@ -309,16 +309,74 @@ fetch-service 识别来源类型
    - GitHub Pages 备站部署（同仓库双 workflow）
    - daisyUI 主题 + 响应式布局
 
-5. **Phase 4：AI 改写（未来）**
-   - 集成 skills
-   - 改写触发 + 结果回写
+5. **Phase 4：AI 改写 + NullClaw 集成**
+   - 安装 NullClaw Agent 运行时到 Actions
+   - 改写命令（改写 鲁迅/马三立/徐志摩 <URL>）
+   - 蒸馏命令（蒸馏 <人名> → 生成人物 Skill）
+   - 任意 Skill 执行（skill:名称 <消息>）
+   - AI Runner 能力（调用 LLM 做摘要/标签/分类）
+   - rewrite-article.yml + run-skill.yml workflows
 
 6. **Phase 5：聊天集成（Telegram / 飞书）**
-   - Telegram Webhook handler（发 URL 触发抓取）
-   - 飞书 Webhook handler（同上）
-   - 命令解析（/fetch URL、/list、/help）
-   - 频率限制
-   - 抓取完成后回复消息通知
+   - ✅ Telegram Webhook handler（已完成）
+   - ✅ 飞书 Webhook handler（已完成）
+   - ✅ 命令解析 /fetch /list /help（已完成）
+   - ✅ 频率限制（已完成）
+   - 企业微信 Webhook handler（待做）
+   - 抓取完成后回复消息通知（待做）
+
+7. **Phase 6：发布能力**
+   - 发布到飞书文档（publish_feishu pipeline）
+   - 发布到墨问（publish pipeline）
+   - 待发布列表查询（pending）
+   - 健康检查 / lint（知识库一致性）
+
+8. **Phase 7：知识库**
+   - 摄入（ingest）：URL → 抓取 → 存入知识库
+   - 查询（query）：基于知识库回答问题
+   - 封面图生成（cover）
+
+## 旧版 msgflow 功能迁移对照表
+
+| 旧版功能 | 旧版文件 | worker-v2 对应 | 状态 |
+|---------|---------|---------------|------|
+| Telegram webhook | `worker/handlers/telegram.js` | `handlers/webhook-telegram.ts` | ✅ |
+| 飞书 webhook | `worker/handlers/feishu.js` | `handlers/webhook-feishu.ts` | ✅ |
+| 企业微信 webhook | `worker/handlers/wecom.js` | — | ❌ Phase 5 |
+| 管理后台 | `worker/handlers/admin.js` | `views/admin.ts` + handlers | ✅ |
+| 命令解析 | `worker/lib/command.js` | `lib/command.ts` | ✅（精简版） |
+| 频率限制 | `worker/lib/rate-limit.js` | `lib/rate-limit.ts` | ✅ |
+| GitHub 触发 | `worker/lib/github.js` | `services/github-actions.ts` | ✅ |
+| 飞书 token | `worker/lib/feishu-token.js` | 内联在 `fetchers/feishu.ts` | ✅ |
+| 企业微信 token | `worker/lib/wecom-token.js` | — | ❌ Phase 5 |
+| 配置管理 | `worker/lib/config.js` | `repositories/config-repository.ts` | ✅ |
+| 内容抓取 | `tools/capabilities/content_fetcher.py` | `services/fetch-service.ts` | ✅ |
+| 微信抓取 | `tools/capabilities/fetchers/weixin.py` | `fetchers/weixin.ts` | ✅ |
+| 飞书抓取 | `tools/capabilities/fetchers/feishu.py` | `fetchers/feishu.ts` | ✅ |
+| Jina 代理 | `tools/capabilities/fetchers/jina.py` | 内联在 `fetchers/generic.ts` | ✅ |
+| Defuddle 代理 | `tools/capabilities/fetchers/defuddle.py` | 内联在 `fetchers/generic.ts` | ✅ |
+| AI Runner | `tools/capabilities/ai_runner.py` | — | ❌ Phase 4 |
+| 文件存储 | `tools/capabilities/file_store.py` | `repositories/file-repository.ts` | ✅ |
+| 封面图生成 | `tools/capabilities/cover.py` | — | ❌ Phase 7 |
+| 飞书 CLI | `tools/capabilities/feishu_cli.py` | — | ❌ Phase 6 |
+| 发布器 | `tools/capabilities/publisher.py` | — | ❌ Phase 6 |
+| 改写 pipeline | `tools/pipelines/rewrite.py` | — | ❌ Phase 4 |
+| 蒸馏 pipeline | `tools/pipelines/distill.py` | — | ❌ Phase 4 |
+| 摄入 pipeline | `tools/pipelines/ingest.py` | — | ❌ Phase 7 |
+| 查询 pipeline | `tools/pipelines/query.py` | — | ❌ Phase 7 |
+| 发布 pipeline | `tools/pipelines/publish.py` | — | ❌ Phase 6 |
+| 发布飞书 | `tools/pipelines/publish_feishu.py` | — | ❌ Phase 6 |
+| 待发布列表 | `tools/pipelines/pending.py` | — | ❌ Phase 6 |
+| 健康检查 | `tools/pipelines/lint.py` | — | ❌ Phase 6 |
+| 抓取 pipeline | `tools/pipelines/fetch.py` | `services/fetch-service.ts` | ✅ |
+| NullClaw 集成 | `.github/workflows/run-skill.yml` | — | ❌ Phase 4 |
+| 改写 workflow | `.github/workflows/rewrite-article.yml` | — | ❌ Phase 4 |
+| 飞书任务 workflow | `.github/workflows/feishu-task.yml` | — | ❌ Phase 6 |
+| 微信抓取 workflow | `.github/workflows/fetch-weixin.yml` | `.github/workflows/fetch-article.yml` | ✅（合并） |
+| Worker 部署 | `.github/workflows/deploy-worker.yml` | 通过 `wrangler deploy` 手动 | ✅ |
+| markdown-proxy skill | `skills/markdown-proxy/` | `fetchers/*.ts`（内置） | ✅ |
+| nuwa-skill | `skills/nuwa-skill/` | — | ❌ Phase 4 |
+| llmwiki-agent skill | `skills/llmwiki-agent/` | — | ❌ Phase 7 |
 
 ---
 

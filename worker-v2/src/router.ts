@@ -9,6 +9,8 @@ import { apiArticles, apiArticleDetail, apiArticleDelete, apiArticlePublish } fr
 import { apiCallback } from "./handlers/api-callback.js";
 import { apiCiConfig } from "./handlers/api-ci-config.js";
 import { handleLoginPage, handleLoginSubmit, handleLogout } from "./handlers/auth.js";
+import { handleGoogleLogin, handleGoogleCallback } from "./handlers/auth-google.js";
+import { pageSettings, handleSettingsSubmit } from "./handlers/settings.js";
 import { authMiddleware } from "./services/auth-service.js";
 import { pageHome, pageFetch } from "./views/admin.js";
 
@@ -25,6 +27,8 @@ const publicRoutes: Route[] = [
   { method: "GET", path: "/login", handler: handleLoginPage },
   { method: "POST", path: "/login", handler: handleLoginSubmit },
   { method: "GET", path: "/logout", handler: handleLogout },
+  { method: "GET", path: "/auth/google", handler: handleGoogleLogin },
+  { method: "GET", path: "/auth/google/callback", handler: handleGoogleCallback },
   { method: "POST", path: "/api/callback", handler: apiCallback },
   { method: "GET", path: "/api/ci-config", handler: apiCiConfig },
 ];
@@ -33,6 +37,8 @@ const publicRoutes: Route[] = [
 const adminRoutes: Route[] = [
   { method: "GET", path: "/", handler: pageHome },
   { method: "GET", path: "/fetch", handler: pageFetch },
+  { method: "GET", path: "/settings", handler: pageSettings },
+  { method: "POST", path: "/settings", handler: handleSettingsSubmit },
   { method: "POST", path: "/api/fetch", handler: apiFetch },
   { method: "GET", path: "/api/articles", handler: apiArticles },
 ];

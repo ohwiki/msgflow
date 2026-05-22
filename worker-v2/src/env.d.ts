@@ -12,6 +12,9 @@ interface Env {
   // Cloudflare API (for R2 access from Actions)
   CF_ACCOUNT_ID?: string;
   CF_R2_API_TOKEN?: string;
+  // Google OAuth
+  GOOGLE_CLIENT_ID?: string;
+  GOOGLE_CLIENT_SECRET?: string;
   // Feishu
   FEISHU_APP_ID?: string;
   FEISHU_APP_SECRET?: string;

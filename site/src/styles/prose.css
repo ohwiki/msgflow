@@ -33,6 +33,10 @@
       @apply rounded bg-muted/75 p-1 wrap-break-word text-foreground before:content-none after:content-none;
     }
 
+    pre code {
+      @apply bg-transparent p-0;
+    }
+
     blockquote {
       @apply border-s-accent/80 wrap-break-word opacity-80;
     }
@@ -44,17 +48,12 @@
 
   /* Shiki dual themes - CSS variable switching */
   .astro-code {
-    @apply flex rounded-lg border border-border overflow-x-auto;
-    background-color: var(--shiki-light-bg) !important;
-    color: var(--shiki-light) !important;
-  }
-
-  .astro-code span {
-    color: var(--shiki-light) !important;
+    @apply rounded-lg border border-border overflow-x-auto;
+    background-color: var(--background) !important;
   }
 
   html[data-theme="dark"] .astro-code {
-    background-color: var(--shiki-dark-bg) !important;
+    background-color: var(--background) !important;
     color: var(--shiki-dark) !important;
   }
 

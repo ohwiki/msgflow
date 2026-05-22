@@ -4,6 +4,7 @@ author: "AI开工局"
 date: 2026-05-20
 tags: ["cloudflare", "自动化", "内容系统"]
 summary: "Cloudflare 的免费五件套，确实能拼出一条最小可行的 AI 内容流水线。"
+cover: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=250&fit=crop"
 source_type: "weixin"
 source_url: "https://mp.weixin.qq.com/s/V34bJOxdiVQIVkzRCYUlqQ"
 ---

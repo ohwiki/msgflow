@@ -23,7 +23,7 @@ const { articles } = Astro.props;
     <h1 class="text-2xl font-semibold tracking-wide mb-8">Tag: <span class="text-accent">{tag}</span></h1>
     <ul>
       {articles.map((a) => (
-        <PostCard title={a.data.title} slug={a.slug} date={a.data.date} summary={a.data.summary} basePath="/en/articles" />
+        <PostCard title={a.data.title} slug={a.slug} date={a.data.date} summary={a.data.summary} cover={a.data.cover} basePath="/en/articles" />
       ))}
     </ul>
   </section>

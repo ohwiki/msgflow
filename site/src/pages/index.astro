@@ -24,7 +24,7 @@ const articles = (await getCollection('articles', ({ data }) => !data.draft))
     <h2 class="text-2xl font-semibold tracking-wide">最新文章</h2>
     <ul>
       {articles.map((a) => (
-        <PostCard title={a.data.title} slug={a.slug} date={a.data.date} summary={a.data.summary} />
+        <PostCard title={a.data.title} slug={a.slug} date={a.data.date} summary={a.data.summary} cover={a.data.cover} />
       ))}
     </ul>
     {articles.length === 0 && <p class="py-8 opacity-60">暂无文章</p>}

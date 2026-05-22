@@ -4,21 +4,37 @@ interface Props {
   slug: string;
   date: Date;
   summary?: string;
+  cover?: string;
   basePath?: string;
 }
 
-const { title, slug, date, summary, basePath = '/articles' } = Astro.props;
+const { title, slug, date, summary, cover, basePath = '/articles' } = Astro.props;
 ---
 
-<li class="my-6">
-  <a href={`${basePath}/${slug}`} class="inline-block text-lg font-medium text-accent decoration-dashed underline-offset-4 focus-visible:no-underline">
-    <h3 class="text-lg font-medium decoration-dashed hover:underline">{title}</h3>
-  </a>
-  <div class="flex items-center gap-x-2 opacity-80">
-    <svg class="inline-block size-6 min-w-[1.375rem] scale-90" width="24" height="24" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11h2v2H7zm0 4h2v2H7zm4-4h2v2h-2zm0 4h2v2h-2zm4-4h2v2h-2zm0 4h2v2h-2z"/><path d="M5 22h14c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2h-2V2h-2v2H9V2H7v2H5c-1.103 0-2 .897-2 2v14c0 1.103.897 2 2 2zM19 8l.001 12H5V8h14z"/></svg>
-    <time class="text-sm" datetime={date.toISOString().slice(0, 10)}>
-      {date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' })}
-    </time>
-  </div>
-  {summary && <p>{summary}</p>}
-</li>
+{cover ? (
+  <li class="my-6">
+    <a href={`${basePath}/${slug}`} class="group flex gap-4 items-start">
+      <img src={cover} alt={title} class="shrink-0 w-32 h-20 sm:w-40 sm:h-24 object-cover rounded-lg border border-border" loading="lazy" />
+      <div class="flex-1 min-w-0">
+        <h3 class="text-lg font-medium text-accent decoration-dashed group-hover:underline underline-offset-4">{title}</h3>
+        {summary && <p class="mt-1 text-sm opacity-70 line-clamp-2">{summary}</p>}
+        <time class="text-xs opacity-60 mt-1 block" datetime={date.toISOString().slice(0, 10)}>
+          {date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' })}
+        </time>
+      </div>
+    </a>
+  </li>
+) : (
+  <li class="my-6">
+    <a href={`${basePath}/${slug}`} class="inline-block text-lg font-medium text-accent decoration-dashed underline-offset-4 focus-visible:no-underline">
+      <h3 class="text-lg font-medium decoration-dashed hover:underline">{title}</h3>
+    </a>
+    <div class="flex items-center gap-x-2 opacity-80">
+      <svg class="inline-block size-6 min-w-[1.375rem] scale-90" width="24" height="24" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 11h2v2H7zm0 4h2v2H7zm4-4h2v2h-2zm0 4h2v2h-2zm4-4h2v2h-2zm0 4h2v2h-2z"/><path d="M5 22h14c1.103 0 2-.897 2-2V6c0-1.103-.897-2-2-2h-2V2h-2v2H9V2H7v2H5c-1.103 0-2 .897-2 2v14c0 1.103.897 2 2 2zM19 8l.001 12H5V8h14z"/></svg>
+      <time class="text-sm" datetime={date.toISOString().slice(0, 10)}>
+        {date.toLocaleDateString('zh-CN', { year: 'numeric', month: 'short', day: 'numeric' })}
+      </time>
+    </div>
+    {summary && <p>{summary}</p>}
+  </li>
+)}

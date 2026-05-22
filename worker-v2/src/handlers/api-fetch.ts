@@ -11,14 +11,23 @@ export async function apiFetch(request: Request, env: Env, log: Logger): Promise
   const isHtmx = request.headers.get("HX-Request") === "true";
   let url: string | undefined;
 
-  const ct = request.headers.get("Content-Type") || "";
-  if (ct.includes("application/json")) {
-    const body = await request.json<{ url?: string }>().catch(() => ({ url: undefined }));
-    url = body.url?.trim();
-  } else {
-    const form = await request.formData();
-    url = (form.get("url") as string)?.trim();
+  try {
+    const ct = request.headers.get("Content-Type") || "";
+    if (ct.includes("json")) {
+      const body = await request.json<{ url?: string }>();
+      url = body.url?.trim();
+    } else {
+      // form-urlencoded or multipart
+      const form = await request.formData();
+      url = (form.get("url") as string)?.trim();
+    }
+  } catch (e) {
+    log.error("fetch_parse_error", { error: String(e) });
+    if (isHtmx) return Res.html(`<div class="alert alert-error">请求解析失败</div>`);
+    throw new ValidationError("Request parse error");
   }
+
+  log.info("fetch_request", { url: url || "(empty)" });
 
   if (!url || !url.startsWith("http")) {
     if (isHtmx) return Res.html(`<div class="alert alert-error">请输入有效的 URL</div>`);
@@ -40,6 +49,7 @@ export async function apiFetch(request: Request, env: Env, log: Logger): Promise
     }
     return Res.json(result);
   } catch (e: any) {
+    log.error("fetch_error", { url, error: e.message });
     if (isHtmx) return Res.html(`<div class="alert alert-error">❌ 抓取失败：${e.message}</div>`);
     throw e;
   }

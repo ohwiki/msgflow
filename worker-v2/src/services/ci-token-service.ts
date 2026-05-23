@@ -28,6 +28,8 @@ export interface CiConfig {
   r2_raw_key: string;
   title: string;
   tags: string;
+  source_type: string;
+  source_url: string;
 }
 
 export class CiTokenService {

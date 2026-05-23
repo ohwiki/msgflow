@@ -72,7 +72,8 @@ export const feishuFetcher: Fetcher = {
     }
 
     const html = htmlParts.join("\n");
-    return { title, author: "", sourceName: "飞书文档", html, hasCodeBlocks: html.includes("<pre") };
+    // 飞书文档始终走 GitHub Actions + Python（Python 版 API 解析质量更高）
+    return { title, author: "", sourceName: "飞书文档", html, hasCodeBlocks: true };
   },
 };
 

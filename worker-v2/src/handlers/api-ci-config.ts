@@ -41,6 +41,8 @@ export async function apiCiConfig(request: Request, env: Env, log: Logger): Prom
     r2_raw_key: payload.r2_raw_key,
     title: article?.title ?? "",
     tags: article?.tags ?? "[]",
+    source_type: article?.source_type ?? "",
+    source_url: article?.url ?? "",
   };
 
   return Res.json(config);

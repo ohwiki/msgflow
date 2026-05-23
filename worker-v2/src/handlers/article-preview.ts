@@ -31,9 +31,14 @@ export async function pageArticlePreview(request: Request, env: Env, log: Logger
   <title>${article.title}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tailwindcss/typography@0.5.16/src/styles/base.min.css"/>
   <style>
-    body { max-width: 48rem; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif; }
+    body { max-width: 48rem; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif; line-height: 1.8; }
     .meta { color: #666; font-size: 0.875rem; margin-bottom: 2rem; }
     a.back { display: inline-block; margin-bottom: 1rem; color: #006cac; }
+    pre { background: #f6f8fa; border: 1px solid #e1e4e8; border-radius: 6px; padding: 1rem; overflow-x: auto; white-space: pre-wrap; word-wrap: break-word; }
+    code { font-family: ui-monospace, monospace; font-size: 0.875rem; }
+    p code { background: #f0f0f0; padding: 0.15em 0.4em; border-radius: 3px; }
+    img { max-width: 100%; border-radius: 6px; margin: 1rem 0; }
+    blockquote { border-left: 3px solid #ddd; padding-left: 1rem; color: #555; }
   </style>
 </head>
 <body>

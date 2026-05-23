@@ -67,11 +67,18 @@ class FeishuFetcher:
     # --- Private methods ---
 
     def _get_user_token(self) -> str | None:
-        """Load user_access_token from file, refresh if expired."""
+        """Load user_access_token from KV (via Worker) or local file, refresh if expired."""
         import json
+        import os
         import time
         from pathlib import Path
 
+        # Try KV first (for GitHub Actions / remote environments)
+        kv_token = self._get_token_from_kv()
+        if kv_token:
+            return kv_token
+
+        # Fallback to local file
         token_file = Path.home() / ".feishu_token.json"
         if not token_file.exists():
             return None
@@ -79,12 +86,10 @@ class FeishuFetcher:
         data = json.loads(token_file.read_text())
         access_token = data.get("access_token")
         refresh_token = data.get("refresh_token")
-        # Check if we have a saved timestamp; if not, try using it
         saved_at = data.get("_saved_at", 0)
         expires_in = data.get("expires_in", 7200)
 
         if saved_at and time.time() - saved_at > expires_in - 300:
-            # Token expired or about to expire, refresh it
             if not refresh_token:
                 return None
             new_data = self._refresh_user_token(refresh_token)
@@ -94,12 +99,34 @@ class FeishuFetcher:
                 return new_data.get("access_token")
             return None
 
-        # First use — save timestamp for future expiry checks
         if not saved_at and access_token:
             data["_saved_at"] = time.time()
             token_file.write_text(json.dumps(data, indent=2))
 
         return access_token
+
+    def _get_token_from_kv(self) -> str | None:
+        """Fetch token from msgflow Worker KV via API."""
+        import json
+        import os
+        import time
+
+        worker_url = os.environ.get("MSGFLOW_WORKER_URL", "https://api.ouraihub.com")
+        try:
+            resp = http_get(f"{worker_url}/api/ci/config/feishu_user_token", timeout=5)
+            data = json.loads(resp.body)
+            token_data = json.loads(data.get("value", "{}")) if isinstance(data.get("value"), str) else data
+            access_token = token_data.get("access_token")
+            if not access_token:
+                return None
+            # Check expiry
+            saved_at = token_data.get("_saved_at", 0)
+            expires_in = token_data.get("expires_in", 7200)
+            if saved_at and time.time() - saved_at > expires_in - 300:
+                return None  # Expired, let cron refresh it
+            return access_token
+        except Exception:
+            return None
 
     def _refresh_user_token(self, refresh_token: str) -> dict | None:
         """Refresh user_access_token using refresh_token."""

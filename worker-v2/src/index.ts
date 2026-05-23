@@ -32,6 +32,49 @@ export default {
   async scheduled(_event: ScheduledController, env: Env, _ctx: ExecutionContext): Promise<void> {
     const log = createLogger({ rid: crypto.randomUUID().slice(0, 8), trigger: "cron" });
     log.info("cron_triggered");
-    // TODO: RSS 轮询 + 图片持久化
+
+    // Refresh Feishu user token
+    try {
+      const raw = await env.KV.get("feishu_user_token");
+      if (raw) {
+        const tokenData = JSON.parse(raw);
+        const savedAt = tokenData._saved_at || 0;
+        const expiresIn = tokenData.expires_in || 7200;
+        const now = Date.now() / 1000;
+
+        // Refresh if token expires within 1 hour
+        if (now - savedAt > expiresIn - 3600) {
+          log.info("feishu_token_refreshing");
+          // Get app_access_token
+          const appResp = await fetch("https://open.feishu.cn/open-apis/auth/v3/app_access_token/internal", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ app_id: env.FEISHU_APP_ID, app_secret: env.FEISHU_APP_SECRET }),
+          });
+          const appData = await appResp.json<any>();
+          const appToken = appData?.app_access_token;
+          if (!appToken) { log.error("feishu_app_token_failed"); return; }
+
+          // Refresh user token
+          const refreshResp = await fetch("https://open.feishu.cn/open-apis/authen/v1/oidc/refresh_access_token", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${appToken}` },
+            body: JSON.stringify({ grant_type: "refresh_token", refresh_token: tokenData.refresh_token }),
+          });
+          const refreshData = await refreshResp.json<any>();
+          if (refreshData?.code === 0 && refreshData?.data) {
+            const newToken = { ...refreshData.data, _saved_at: now };
+            await env.KV.put("feishu_user_token", JSON.stringify(newToken));
+            log.info("feishu_token_refreshed");
+          } else {
+            log.error("feishu_token_refresh_failed", { msg: refreshData?.msg });
+          }
+        } else {
+          log.info("feishu_token_still_valid");
+        }
+      }
+    } catch (e: any) {
+      log.error("feishu_token_refresh_error", { error: e.message });
+    }
   },
 } satisfies ExportedHandler<Env>;

@@ -23,16 +23,19 @@ class FeishuFetcher:
         return "feishu.cn" in url or "larksuite.com" in url
 
     def fetch(self, url: str) -> FetchResult | None:
-        try:
-            app_id = require_env("FEISHU_APP_ID")
-            app_secret = require_env("FEISHU_APP_SECRET")
-        except Exception:
-            log.error("FEISHU_APP_ID/SECRET not configured")
-            return None
-
-        token = self._get_token(app_id, app_secret)
+        # Try user token first (can access any doc the user can see)
+        token = self._get_user_token()
         if not token:
-            return None
+            # Fallback to app token (only own tenant docs)
+            try:
+                app_id = require_env("FEISHU_APP_ID")
+                app_secret = require_env("FEISHU_APP_SECRET")
+            except Exception:
+                log.error("FEISHU_APP_ID/SECRET not configured and no user token")
+                return None
+            token = self._get_token(app_id, app_secret)
+            if not token:
+                return None
 
         doc_id, doc_type = self._parse_url(url)
         if not doc_id:
@@ -62,6 +65,75 @@ class FeishuFetcher:
         return FetchResult(content=md, url=url)
 
     # --- Private methods ---
+
+    def _get_user_token(self) -> str | None:
+        """Load user_access_token from file, refresh if expired."""
+        import json
+        import time
+        from pathlib import Path
+
+        token_file = Path.home() / ".feishu_token.json"
+        if not token_file.exists():
+            return None
+
+        data = json.loads(token_file.read_text())
+        access_token = data.get("access_token")
+        refresh_token = data.get("refresh_token")
+        # Check if we have a saved timestamp; if not, try using it
+        saved_at = data.get("_saved_at", 0)
+        expires_in = data.get("expires_in", 7200)
+
+        if saved_at and time.time() - saved_at > expires_in - 300:
+            # Token expired or about to expire, refresh it
+            if not refresh_token:
+                return None
+            new_data = self._refresh_user_token(refresh_token)
+            if new_data:
+                new_data["_saved_at"] = time.time()
+                token_file.write_text(json.dumps(new_data, indent=2))
+                return new_data.get("access_token")
+            return None
+
+        # First use — save timestamp for future expiry checks
+        if not saved_at and access_token:
+            data["_saved_at"] = time.time()
+            token_file.write_text(json.dumps(data, indent=2))
+
+        return access_token
+
+    def _refresh_user_token(self, refresh_token: str) -> dict | None:
+        """Refresh user_access_token using refresh_token."""
+        import os
+        app_id = os.environ.get("FEISHU_APP_ID", "")
+        app_secret = os.environ.get("FEISHU_APP_SECRET", "")
+        if not app_id or not app_secret:
+            return None
+
+        try:
+            # Get app_access_token first
+            resp = http_post(
+                f"{FEISHU_API_BASE}/auth/v3/app_access_token/internal",
+                json={"app_id": app_id, "app_secret": app_secret},
+                timeout=10,
+            )
+            app_token = resp.json().get("app_access_token")
+            if not app_token:
+                return None
+
+            # Refresh user token
+            resp = http_post(
+                f"{FEISHU_API_BASE}/authen/v1/oidc/refresh_access_token",
+                json={"grant_type": "refresh_token", "refresh_token": refresh_token},
+                headers={"Authorization": f"Bearer {app_token}", "Content-Type": "application/json"},
+                timeout=10,
+            )
+            data = resp.json()
+            if data.get("code") == 0:
+                log.info("User token refreshed")
+                return data.get("data")
+        except HttpError as e:
+            log.error("Token refresh failed", status=e.status)
+        return None
 
     def _get_token(self, app_id: str, app_secret: str) -> str | None:
         try:

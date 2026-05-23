@@ -7,8 +7,8 @@ import webbrowser
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs, urlencode
 
-APP_ID = os.environ.get("FEISHU_APP_ID", "cli_aa9b29dea0b89bd0")
-APP_SECRET = os.environ.get("FEISHU_APP_SECRET", "wZXRoMjzEtYoMQrdIwGOlt72m8tPnYJi")
+APP_ID = os.environ.get("FEISHU_APP_ID", "")
+APP_SECRET = os.environ.get("FEISHU_APP_SECRET", "")
 REDIRECT_URI = "http://localhost:9999/callback"
 TOKEN_FILE = os.path.expanduser("~/.feishu_token.json")
 

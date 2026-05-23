@@ -91,4 +91,11 @@ export class ArticleRepository implements IArticleRepository {
   async delete(id: string): Promise<void> {
     await this.db.prepare("DELETE FROM articles WHERE id = ?").bind(id).run();
   }
+
+  async updateTags(id: string, tags: string): Promise<void> {
+    await this.db
+      .prepare("UPDATE articles SET tags = ?, updated_at = datetime('now') WHERE id = ?")
+      .bind(tags, id)
+      .run();
+  }
 }

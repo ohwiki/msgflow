@@ -10,16 +10,23 @@ import type { Logger } from "../lib/log.js";
 export async function apiFetch(request: Request, env: Env, log: Logger): Promise<Response> {
   const isHtmx = request.headers.get("HX-Request") === "true";
   let url: string | undefined;
+  let tags: string[] = [];
 
   try {
     const ct = request.headers.get("Content-Type") || "";
     if (ct.includes("json")) {
-      const body = await request.json<{ url?: string }>();
+      const body = await request.json<{ url?: string; tags?: string[] }>();
       url = body.url?.trim();
+      tags = body.tags || [];
     } else {
       // form-urlencoded or multipart
       const form = await request.formData();
       url = (form.get("url") as string)?.trim();
+      tags = form.getAll("tags").map(t => String(t));
+      const customTags = (form.get("custom_tags") as string)?.trim();
+      if (customTags) {
+        tags.push(...customTags.split(/[,，]/).map(t => t.trim()).filter(Boolean));
+      }
     }
   } catch (e) {
     log.error("fetch_parse_error", { error: String(e) });
@@ -37,6 +44,13 @@ export async function apiFetch(request: Request, env: Env, log: Logger): Promise
   try {
     const service = new FetchService(env, log);
     const result = await service.fetchUrl(url);
+
+    // 保存用户选择的标签
+    if (tags.length > 0) {
+      const { ArticleRepository } = await import("../repositories/article-repository.js");
+      const repo = new ArticleRepository(env.DB);
+      await repo.updateTags(result.articleId, JSON.stringify(tags));
+    }
 
     if (isHtmx) {
       return Res.html(`

@@ -86,3 +86,19 @@ echo "<your_app_secret>" | npx wrangler secret put FEISHU_APP_SECRET
 - ❌ 不要手动修改 KV 里的 token 值
 - ✅ fetcher 优先从 KV 读，fallback 到本地文件
 - ✅ 本地开发时有 `~/.feishu_token.json` 就能用，不需要 KV
+
+## 飞书图片下载
+
+飞书文档中的图片会自动下载到 `./images/` 目录，markdown 引用相对路径 `./images/xxx.png`。
+
+### 实现细节
+
+- API：`GET /open-apis/drive/v1/medias/{token}/download?extra={"drive_route_token":"doc_id"}`
+- `extra` 参数必须传文档 ID，否则返回 403
+- 图片 block type：17（旧 API）和 27（新 API）
+- 下载失败时 fallback 到 `feishu-image://token` 占位符
+
+### 已知限制
+
+- 部分文档的图片可能返回 403（文档所有者未开放图片权限）
+- 此时 markdown 中保留 `feishu-image://token` 占位符，不影响文本内容

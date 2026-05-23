@@ -4,9 +4,9 @@
 
 ## 为什么需要单独配置
 
-直接发飞书文档链接时，默认会走 Jina Reader 抓取网页。但飞书文档是 JS 渲染的，网页抓取效果差（图片丢失、内容截断）。
+飞书文档是 JS 渲染的，普通网页抓取效果差（图片丢失、内容截断）。
 
-通过飞书 API 抓取，能拿到完整的结构化数据：标题层级、代码块、图片、列表等全部保留。
+通过飞书 API 抓取，能拿到完整的结构化数据：标题层级、代码块（含语言标记）、图片、列表、待办等全部保留。
 
 ## 前提条件
 
@@ -36,70 +36,74 @@
 
 进入版本管理与发布 → 创建版本 → 提交（企业内部应用通常自动通过）
 
-### 4. 配置到 msgflow
+### 4. 配置凭据
 
-在 Admin 管理页面（`https://你的域名/admin?token=你的ADMIN_TOKEN`）暂时没有飞书文档的配置项。
+需要在两个地方配置：
 
-需要在 GitHub Actions 的环境变量中添加：
+#### Worker 环境变量（用于 Worker 内飞书 fetcher）
 
-仓库 Settings → Secrets → Actions → New repository secret：
+```bash
+npx wrangler secret put FEISHU_APP_ID --env production
+npx wrangler secret put FEISHU_APP_SECRET --env production
+```
+
+#### GitHub Actions Secrets（用于 Python 精细处理）
+
+在 `ohmyflow/msgflow-tasks` 仓库：Settings → Secrets → Actions → New repository secret：
 
 | Name | Value |
 |------|-------|
 | `FEISHU_APP_ID` | 你的 App ID |
 | `FEISHU_APP_SECRET` | 你的 App Secret |
 
-> 如果你已经配置了飞书消息渠道，可以复用同一个应用，只需要加上文档读取权限即可。
+## 使用方式
 
-## 获取知识库 Space ID
+在后台 https://admin.ouraihub.com/fetch 输入飞书文档 URL，点击抓取即可。
 
-如果你想把内容发布到飞书知识库（而不是「我的空间」），需要知识库的 Space ID。
+系统会自动识别飞书链接，走精细模式（GitHub Actions + 飞书 API）处理。
 
-**获取方法：**
+## 支持的 URL 格式
 
-1. 打开飞书知识库页面，进入你要发布到的知识库
-2. 看浏览器地址栏，URL 格式为：`https://xxx.feishu.cn/wiki/space/7xxxxxxxxxxxxxxx`
-3. 最后那串数字就是 Space ID（如 `7380000000000000000`）
-
-或者通过 API 获取：
-
-```bash
-# 先拿 token
-TOKEN=$(curl -s https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal \
-  -d '{"app_id":"你的APP_ID","app_secret":"你的APP_SECRET"}' | jq -r '.tenant_access_token')
-
-# 列出你有权限的知识库
-curl -s -H "Authorization: Bearer $TOKEN" \
-  "https://open.feishu.cn/open-apis/wiki/v2/spaces" | jq '.data.items[] | {name, space_id}'
+```
+https://xxx.feishu.cn/docx/xxxxxxxx       # 新版文档
+https://xxx.feishu.cn/docs/xxxxxxxx       # 旧版文档
+https://xxx.feishu.cn/wiki/xxxxxxxx       # 知识库页面
+https://xxx.larksuite.com/docx/xxxxxxxx   # 国际版
 ```
 
-拿到 Space ID 后，在 Admin 管理页面的「飞书知识库 Space ID」字段填入即可。
+## 处理流程
+
+```
+飞书 URL → Worker 识别为飞书 → 触发 GitHub Actions
+  → Python 调用飞书 Open API
+  → 获取文档 Blocks（分页，最多 500/页）
+  → 逐块转换 Markdown（16 种 block type）
+  → 回调 Worker 存储 + 归档到 GitHub
+```
+
+支持的 Block 类型：
+
+| Block Type | 转换结果 |
+|-----------|---------|
+| 文本 | 段落（含加粗/斜体/删除线/行内代码/链接） |
+| 标题 1-7 | `# ~ #######` |
+| 无序列表 | `- item` |
+| 有序列表 | `1. item` |
+| 代码块 | ` ```language ... ``` `（自动识别语言） |
+| 引用 | `> text` |
+| 待办 | `- [x] / - [ ]` |
+| 分割线 | `---` |
+| 图片 | `![image](feishu-image://token)` |
+| 公式 | `$equation$` |
 
 ## 能抓什么
 
 | 文档类型 | 能否抓取 | 说明 |
 |---------|---------|------|
-| 互联网公开的文档 | ✅ | 任何设置了「互联网可见」的文档 |
+| 互联网公开的文档 | ✅ | 设置了「互联网可见」的文档 |
 | 你自己的文档 | ✅ | 应用代表你访问 |
 | 别人分享给你的文档 | ✅ | 你有查看权限即可 |
 | 别人的私有文档 | ❌ | 没有权限 |
-
-## 支持的 URL 格式
-
-```
-https://xxx.feishu.cn/docx/xxxxxxxx    # 新版文档
-https://xxx.feishu.cn/docs/xxxxxxxx    # 旧版文档
-https://xxx.feishu.cn/wiki/xxxxxxxx    # 知识库页面
-https://xxx.larksuite.com/docx/xxxxxxxx  # 国际版
-```
-
-## 使用方式
-
-配置完成后，通过 `skill:markdown-proxy` 指令抓取飞书文档：
-
-```
-skill:markdown-proxy https://xxx.feishu.cn/wiki/xxxxxxxx
-```
 
 ## 故障排查
 
@@ -109,3 +113,4 @@ skill:markdown-proxy https://xxx.feishu.cn/wiki/xxxxxxxx
 | 知识库页面抓取失败 | 缺少 wiki 权限 | 添加 `wiki:wiki:readonly` 权限 |
 | App Secret 无效 | 应用未发布 | 确认应用已发布上线 |
 | 内容为空 | 文档是私有的且你无权访问 | 确认文档对你的账号可见 |
+| Actions 中飞书步骤失败 | Secrets 未配置 | 检查 `FEISHU_APP_ID` 和 `FEISHU_APP_SECRET` 是否设置 |

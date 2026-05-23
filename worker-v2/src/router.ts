@@ -17,6 +17,7 @@ import { pageSettings, handleSettingsSubmit } from "./handlers/settings.js";
 import { authMiddleware } from "./services/auth-service.js";
 import { handleImageResize } from "./handlers/image-resize.js";
 import { apiShorten, handleShortRedirect } from "./handlers/short-url.js";
+import { pageArticlePreview } from "./handlers/article-preview.js";
 import { pageHome, pageFetch } from "./views/admin.js";
 
 type RouteHandler = (request: Request, env: Env, log: Logger) => Promise<Response>;
@@ -94,6 +95,7 @@ export async function router(
   if (route) return route.handler(request, env, log);
 
   // Dynamic admin routes
+  if (method === "GET" && path.match(/^\/article\/[^/]+\/preview$/)) return pageArticlePreview(request, env, log);
   if (method === "GET" && path.match(/^\/api\/articles\/[^/]+$/)) return apiArticleDetail(request, env, log);
   if (method === "DELETE" && path.match(/^\/api\/articles\/[^/]+$/)) return apiArticleDelete(request, env, log);
   if (method === "POST" && path.match(/^\/api\/articles\/[^/]+\/publish$/)) return apiArticlePublish(request, env, log);

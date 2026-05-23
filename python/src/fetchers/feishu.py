@@ -39,6 +39,7 @@ class FeishuFetcher:
 
         self._current_token = token
         self._images_dir: str | None = None
+        self._doc_id: str | None = None
 
         doc_id, doc_type = self._parse_url(url)
         if not doc_id:
@@ -60,6 +61,7 @@ class FeishuFetcher:
         if blocks is None:
             return None
 
+        self._doc_id = doc_id
         content = self._blocks_to_markdown(blocks)
 
         # Format with frontmatter
@@ -71,19 +73,19 @@ class FeishuFetcher:
 
     def _download_image(self, img_token: str, auth_token: str) -> str | None:
         """Download image from feishu and save to images/ dir. Returns relative path."""
-        import os
+        import json as json_mod
         from pathlib import Path
 
-        # Create images dir next to output
         if not self._images_dir:
             self._images_dir = "images"
             Path(self._images_dir).mkdir(parents=True, exist_ok=True)
 
-        url = f"{FEISHU_API_BASE}/drive/v1/medias/{img_token}/download"
+        extra = json_mod.dumps({"drive_route_token": self._doc_id or ""})
+        url = f"{FEISHU_API_BASE}/drive/v1/medias/{img_token}/download?extra={urllib.parse.quote(extra)}"
         try:
-            import urllib.request
-            req = urllib.request.Request(url, headers={"Authorization": f"Bearer {auth_token}"})
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            import urllib.request as urllib_req
+            req = urllib_req.Request(url, headers={"Authorization": f"Bearer {auth_token}"})
+            with urllib_req.urlopen(req, timeout=30) as resp:
                 content_type = resp.headers.get("Content-Type", "image/png")
                 ext = ".png"
                 if "jpeg" in content_type or "jpg" in content_type:

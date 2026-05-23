@@ -296,7 +296,7 @@ class FeishuFetcher:
                             lines.append(text)
                         break
 
-        return "\n\n".join(lines)
+        return re.sub(r"\n{3,}", "\n\n", "\n\n".join(lines)).strip()
 
     def _extract_text(self, elements: list) -> str:
         parts: list[str] = []

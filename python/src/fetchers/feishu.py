@@ -37,6 +37,9 @@ class FeishuFetcher:
             if not token:
                 return None
 
+        self._current_token = token
+        self._images_dir: str | None = None
+
         doc_id, doc_type = self._parse_url(url)
         if not doc_id:
             log.error("Cannot parse feishu URL", url=url)
@@ -65,6 +68,39 @@ class FeishuFetcher:
         return FetchResult(content=md, url=url)
 
     # --- Private methods ---
+
+    def _download_image(self, img_token: str, auth_token: str) -> str | None:
+        """Download image from feishu and save to images/ dir. Returns relative path."""
+        import os
+        from pathlib import Path
+
+        # Create images dir next to output
+        if not self._images_dir:
+            self._images_dir = "images"
+            Path(self._images_dir).mkdir(parents=True, exist_ok=True)
+
+        url = f"{FEISHU_API_BASE}/drive/v1/medias/{img_token}/download"
+        try:
+            import urllib.request
+            req = urllib.request.Request(url, headers={"Authorization": f"Bearer {auth_token}"})
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                content_type = resp.headers.get("Content-Type", "image/png")
+                ext = ".png"
+                if "jpeg" in content_type or "jpg" in content_type:
+                    ext = ".jpg"
+                elif "gif" in content_type:
+                    ext = ".gif"
+                elif "webp" in content_type:
+                    ext = ".webp"
+
+                filename = f"{img_token}{ext}"
+                filepath = Path(self._images_dir) / filename
+                filepath.write_bytes(resp.read())
+                log.info("Image downloaded", token=img_token, path=str(filepath))
+                return f"./images/{filename}"
+        except Exception as e:
+            log.warning("Image download failed", token=img_token, error=str(e))
+            return None
 
     def _get_user_token(self) -> str | None:
         """Load user_access_token from KV (via Worker) or local file, refresh if expired."""
@@ -282,9 +318,16 @@ class FeishuFetcher:
                 lines.append(f"- [{'x' if done else ' '}] {text}")
             elif bt == 16:  # Divider
                 lines.append("---")
-            elif bt == 17:  # Image
+            elif bt in (17, 27):  # Image (17=old API, 27=new API)
                 img_token = block.get("image", {}).get("token", "")
-                lines.append(f"![image](feishu-image://{img_token})")
+                if img_token and self._current_token:
+                    img_path = self._download_image(img_token, self._current_token)
+                    if img_path:
+                        lines.append(f"![image]({img_path})")
+                    else:
+                        lines.append(f"![image](feishu-image://{img_token})")
+                else:
+                    lines.append(f"![image](feishu-image://{img_token})")
             elif bt == 1:  # Page root
                 pass
             else:

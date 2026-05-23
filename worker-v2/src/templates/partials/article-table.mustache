@@ -18,6 +18,7 @@
         </td>
         <td class="text-xs text-base-content/60">{{fetched_at_short}}</td>
         <td>
+          <a href="/article/{{id}}/preview" class="btn btn-ghost btn-xs" target="_blank">预览</a>
           {{#isCleaned}}<button class="btn btn-success btn-xs" hx-post="/api/articles/{{id}}/publish" hx-swap="outerHTML">发布</button>{{/isCleaned}}
           <button class="btn btn-error btn-xs btn-outline" hx-delete="/api/articles/{{id}}" hx-confirm="确定删除？" hx-target="closest tr" hx-swap="outerHTML">删除</button>
         </td>

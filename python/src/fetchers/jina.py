@@ -1,21 +1,13 @@
-"""Jina Reader fetcher."""
+"""Jina Reader fetcher — general-purpose web content extraction."""
 
 from __future__ import annotations
-
-from dataclasses import dataclass
 
 from pycore import logger, env
 from pycore.http import get, HttpError
 
-from fetchers import fetchers
+from fetchers._registry import fetcher_registry as fetchers, FetchResult
 
 log = logger("fetcher.jina")
-
-
-@dataclass
-class FetchResult:
-    content: str
-    url: str = ""
 
 
 @fetchers.register

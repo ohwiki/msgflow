@@ -1,10 +1,8 @@
 """Content fetchers — auto-registered on import."""
 
-from lib.registry import Registry
+from fetchers._registry import fetcher_registry as fetchers
 
-fetchers: Registry = Registry("fetcher")
-
-# Order matters: specific fetchers first, generic (Jina) last
+# Import order = registration order. Specific first, generic last.
 from fetchers.weixin import WeixinFetcher  # noqa: E402, F401
 from fetchers.feishu import FeishuFetcher  # noqa: E402, F401
 from fetchers.jina import JinaFetcher  # noqa: E402, F401

@@ -5,8 +5,7 @@ from __future__ import annotations
 from pycore import logger, require_env
 from pycore.http import post, get, HttpError
 
-from fetchers import fetchers
-from fetchers.jina import FetchResult
+from fetchers._registry import fetcher_registry as fetchers, FetchResult
 
 log = logger("fetcher.feishu")
 

@@ -8,8 +8,7 @@ from dataclasses import dataclass
 
 from pycore import logger
 
-from fetchers import fetchers
-from fetchers.jina import FetchResult
+from fetchers._registry import fetcher_registry as fetchers, FetchResult
 
 log = logger("fetcher.weixin")
 

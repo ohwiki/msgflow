@@ -58,7 +58,17 @@ npx wrangler secret put FEISHU_APP_SECRET --env production
 
 ## 使用方式
 
+### 方式一：后台 Web 界面
+
 在后台 https://admin.ouraihub.com/fetch 输入飞书文档 URL，点击抓取即可。
+
+### 方式二：聊天指令
+
+通过 Telegram/飞书/企业微信发送：
+
+```
+skill:markdown-proxy https://xxx.feishu.cn/wiki/xxxxxxxx
+```
 
 系统会自动识别飞书链接，走精细模式（GitHub Actions + 飞书 API）处理。
 

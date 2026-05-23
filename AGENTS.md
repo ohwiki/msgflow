@@ -17,6 +17,9 @@ cd worker-v2 && npx vitest
 
 详细编码规范见 `worker-v2/AGENTS.md` 和 `CLAUDE.md`。
 
+配置 Secrets 时，读 `docs/ai-secrets-config-guide.md`。
+配置飞书 OAuth 时，读 `docs/feishu-oauth-setup.md`。
+
 ## 文件放置规范（严格遵守）
 
 **白名单制 — 只允许在以下位置创建/修改文件：**

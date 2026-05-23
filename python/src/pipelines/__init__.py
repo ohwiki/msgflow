@@ -1,6 +1,6 @@
 """Pipelines — auto-registered on import."""
 
-from pycore.registry import Registry
+from lib.registry import Registry
 
 pipelines: Registry = Registry("pipeline")
 

@@ -1,12 +1,13 @@
 """Content fetchers — auto-registered on import."""
 
-from pycore.registry import Registry
+from lib.registry import Registry
 
 fetchers: Registry = Registry("fetcher")
 
-from fetchers.jina import JinaFetcher  # noqa: E402, F401
+# Order matters: specific fetchers first, generic (Jina) last
 from fetchers.weixin import WeixinFetcher  # noqa: E402, F401
 from fetchers.feishu import FeishuFetcher  # noqa: E402, F401
+from fetchers.jina import JinaFetcher  # noqa: E402, F401
 
 
 def fetch(url: str) -> str | None:

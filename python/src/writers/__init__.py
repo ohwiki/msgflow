@@ -1,6 +1,6 @@
 """Publishers — auto-registered on import."""
 
-from pycore.registry import Registry
+from lib.registry import Registry
 
 publishers: Registry = Registry("publisher")
 

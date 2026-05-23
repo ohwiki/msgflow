@@ -1,16 +1,24 @@
-"""Jina Reader fetcher — general-purpose web content extraction."""
+"""Jina Reader fetcher."""
 
-import os
-import urllib.request
-import urllib.error
-from lib.interfaces import FetchResult
-from lib.registry import register_fetcher
-from lib.logger import get_logger
+from __future__ import annotations
 
-log = get_logger("fetcher.jina")
+from dataclasses import dataclass
+
+from pycore import logger, env
+from pycore.http import get, HttpError
+
+from fetchers import fetchers
+
+log = logger("fetcher.jina")
 
 
-@register_fetcher
+@dataclass
+class FetchResult:
+    content: str
+    url: str = ""
+
+
+@fetchers.register
 class JinaFetcher:
     name = "jina"
 
@@ -20,19 +28,17 @@ class JinaFetcher:
     def fetch(self, url: str) -> FetchResult | None:
         api_url = f"https://r.jina.ai/{url}"
         headers = {"Accept": "text/markdown"}
-        token = os.environ.get("JINA_API_KEY")
+        token = env("JINA_API_KEY")
         if token:
             headers["Authorization"] = f"Bearer {token}"
 
-        req = urllib.request.Request(api_url, headers=headers)
-        log.info("Fetching via Jina", extra={"data": {"url": url}})
+        log.info("Fetching via Jina", url=url)
         try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                content = resp.read().decode("utf-8")
-                if len(content) < 100:
-                    log.warning("Jina returned too little content", extra={"data": {"len": len(content)}})
-                    return None
-                return FetchResult(content=content, url=url)
-        except (urllib.error.URLError, TimeoutError) as e:
-            log.warning("Jina fetch failed", extra={"data": {"url": url, "error": str(e)}})
+            resp = get(api_url, headers=headers, timeout=30)
+            if len(resp.body) < 100:
+                log.warning("Jina returned too little content", length=len(resp.body))
+                return None
+            return FetchResult(content=resp.body, url=url)
+        except HttpError as e:
+            log.warning("Jina fetch failed", url=url, status=e.status)
             return None

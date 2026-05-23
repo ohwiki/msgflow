@@ -1,7 +1,11 @@
-"""Auto-register all pipelines on import."""
+"""Pipelines — auto-registered on import."""
 
-from pipelines.fetch import FetchPipeline  # noqa: F401
-from pipelines.rewrite import RewritePipeline  # noqa: F401
-from pipelines.query import QueryPipeline  # noqa: F401
-from pipelines.distill import DistillPipeline  # noqa: F401
-from pipelines.publish import PublishPipeline  # noqa: F401
+from pycore.registry import Registry
+
+pipelines: Registry = Registry("pipeline")
+
+from pipelines.fetch import FetchPipeline  # noqa: E402, F401
+from pipelines.rewrite import RewritePipeline  # noqa: E402, F401
+from pipelines.query import QueryPipeline  # noqa: E402, F401
+from pipelines.distill import DistillPipeline  # noqa: E402, F401
+from pipelines.publish import PublishPipeline  # noqa: E402, F401

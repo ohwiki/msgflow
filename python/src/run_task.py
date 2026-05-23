@@ -1,69 +1,75 @@
 """msgflow task runner — unified CLI entry point."""
 
+from __future__ import annotations
+
 import sys
-import argparse
-from pathlib import Path
+
+import typer
+
+from pycore import Result, output_result, logger
+
+log = logger("main")
+
+app = typer.Typer(name="msgflow", no_args_is_help=True)
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(prog="msgflow-task", description="msgflow 任务执行器")
-    sub = parser.add_subparsers(dest="action", required=True)
+@app.command()
+def fetch(url: str) -> None:
+    """抓取 URL 为 Markdown"""
+    _run("fetch", url)
 
-    p = sub.add_parser("fetch", help="抓取 URL 为 Markdown")
-    p.add_argument("target", help="URL")
 
-    p = sub.add_parser("rewrite", help="改写文章")
-    p.add_argument("target", help="URL 或文件路径")
-    p.add_argument("--style", default="lu-xun", help="改写风格")
+@app.command()
+def rewrite(url: str, style: str = "lu-xun") -> None:
+    """AI 改写文章"""
+    _run("rewrite", url, style=style)
 
-    p = sub.add_parser("query", help="查询知识库")
-    p.add_argument("target", help="问题")
 
-    p = sub.add_parser("distill", help="蒸馏人物为 writer skill")
-    p.add_argument("target", help="人物名")
+@app.command()
+def query(question: str) -> None:
+    """查询知识库"""
+    _run("query", question)
 
-    p = sub.add_parser("publish", help="发布文件")
-    p.add_argument("target", help="文件路径")
-    p.add_argument("--publisher", default="mowen", help="发布目标")
 
-    p = sub.add_parser("skill", help="执行任意 skill")
-    p.add_argument("target", help="消息内容")
-    p.add_argument("--skill", required=True, help="skill 名称")
+@app.command()
+def distill(name: str) -> None:
+    """蒸馏人物为 writer skill"""
+    _run("distill", name)
 
-    args = parser.parse_args()
 
-    # Import registries (triggers auto-registration)
-    import fetchers  # noqa: F401
+@app.command()
+def publish(file: str, publisher: str = "mowen") -> None:
+    """发布文件"""
+    _run("publish", file, publisher=publisher)
+
+
+@app.command()
+def skill(message: str, skill_name: str = typer.Option(..., "--skill")) -> None:
+    """执行任意 skill"""
+    from lib.ai_runner import run_skill as _run_skill
+    result_text = _run_skill(skill_name, message)
+    output_result(Result.ok(result_text) if result_text else Result.fail("skill 执行失败"))
+    if not result_text:
+        raise SystemExit(1)
+
+
+def _run(pipeline_name: str, target: str, **kwargs: object) -> None:
+    """Dispatch to a registered pipeline."""
+    import fetchers  # noqa: F401 — trigger registration
     import writers  # noqa: F401
-    import pipelines  # noqa: F401
-    from lib.registry import PIPELINES
-    from lib.ai_runner import run_skill
-    from lib.logger import get_logger
+    import pipelines as _pipelines  # noqa: F401
+    from pipelines import pipelines as registry
 
-    log = get_logger("run_task")
+    handler = registry.get(pipeline_name)
+    if not handler:
+        output_result(Result.fail(f"未知 pipeline: {pipeline_name}"))
+        raise SystemExit(1)
 
-    # Dispatch
-    if args.action == "skill":
-        result_text = run_skill(args.skill, args.target)
-        output = result_text or "错误：skill 执行失败"
-        success = result_text is not None
-    elif args.action in PIPELINES:
-        kwargs = vars(args)
-        kwargs.pop("action")
-        target = kwargs.pop("target")
-        result = PIPELINES[args.action].execute(target, **kwargs)
-        output = result.output
-        success = result.success
-    else:
-        output = f"错误：未知 action: {args.action}"
-        success = False
-
-    # Output
-    Path("/tmp/result.txt").write_text(output, encoding="utf-8")
-    log.info("Task complete", extra={"data": {"action": args.action, "success": success}})
-    print("success" if success else "error")
-    sys.exit(0 if success else 1)
+    result = handler.execute(target, **kwargs)
+    output_result(result)
+    if not result.success:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
-    main()
+    app()

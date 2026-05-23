@@ -58,8 +58,8 @@ def format_code(text: str, lang: str) -> str:
             r"(?<=[a-zA-Z0-9._/\]])\s+(?=npx\s|pip\s|python3?\s|curl\s|cd\s|mkdir\s|echo\s|git\s|npm\s|yarn\s|docker\s|sudo\s)",
             "\n", text,
         ).strip()
-    # Generic fallback
-    return re.sub(r"(?<=[;{}\)\]])(\s)(\s+)", r"\n\2", text).strip()
+    # Generic fallback — preserve original formatting
+    return text.strip()
 
 
 def process(input_path: str, output_path: str) -> None:

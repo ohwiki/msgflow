@@ -13,6 +13,7 @@ import { handleLoginPage, handleLoginSubmit, handleLogout } from "./handlers/aut
 import { handleGoogleLogin, handleGoogleCallback } from "./handlers/auth-google.js";
 import { handleTelegramWebhook } from "./handlers/webhook-telegram.js";
 import { handleFeishuWebhook } from "./handlers/webhook-feishu.js";
+import { apiFeishuTokenStatus } from "./handlers/api-feishu-token.js";
 import { pageSettings, handleSettingsSubmit } from "./handlers/settings.js";
 import { authMiddleware } from "./services/auth-service.js";
 import { handleImageResize } from "./handlers/image-resize.js";
@@ -51,6 +52,7 @@ const adminRoutes: Route[] = [
   { method: "POST", path: "/api/fetch", handler: apiFetch },
   { method: "POST", path: "/api/shorten", handler: apiShorten },
   { method: "GET", path: "/api/articles", handler: apiArticles },
+  { method: "GET", path: "/api/feishu/token-status", handler: apiFeishuTokenStatus },
 ];
 
 // Public reader routes (read.xxx.com, no auth)

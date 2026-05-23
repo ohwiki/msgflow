@@ -28,6 +28,7 @@ export async function pageArticlePreview(request: Request, env: Env, log: Logger
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <meta name="referrer" content="no-referrer"/>
   <title>${article.title}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tailwindcss/typography@0.5.16/src/styles/base.min.css"/>
   <style>

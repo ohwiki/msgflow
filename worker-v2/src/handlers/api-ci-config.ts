@@ -27,6 +27,11 @@ export async function apiCiConfig(request: Request, env: Env, log: Logger): Prom
 
   log.info("ci_config_issued", { articleId: payload.article_id });
 
+  // 从 DB 获取文章的 title 和 tags
+  const { ArticleRepository } = await import("../repositories/article-repository.js");
+  const repo = new ArticleRepository(env.DB);
+  const article = await repo.getById(payload.article_id);
+
   const config: CiConfig = {
     cf_account_id: env.CF_ACCOUNT_ID ?? "",
     cf_api_token: env.CF_R2_API_TOKEN ?? "",
@@ -34,6 +39,8 @@ export async function apiCiConfig(request: Request, env: Env, log: Logger): Prom
     callback_secret: env.CALLBACK_SECRET ?? "",
     article_id: payload.article_id,
     r2_raw_key: payload.r2_raw_key,
+    title: article?.title ?? "",
+    tags: article?.tags ?? "[]",
   };
 
   return Res.json(config);

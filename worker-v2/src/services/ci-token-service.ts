@@ -14,6 +14,8 @@ const CI_TOKEN_PREFIX = "ci_token:";
 export interface CiTokenPayload {
   article_id: string;
   r2_raw_key: string;
+  title?: string;
+  tags?: string;
   created_at: string;
 }
 
@@ -24,6 +26,8 @@ export interface CiConfig {
   callback_secret: string;
   article_id: string;
   r2_raw_key: string;
+  title: string;
+  tags: string;
 }
 
 export class CiTokenService {

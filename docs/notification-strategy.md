@@ -1,5 +1,30 @@
 # 任务通知方案对比
 
+## 为什么需要 Worker
+
+飞书和 Telegram 的机器人消息是**推送模式**——用户发消息后，平台把消息 POST 到你配置的 webhook URL。这个 URL 必须是公网可访问的 HTTP 服务。
+
+我们没有 VPS，所以用 **Cloudflare Worker** 充当这个角色（免费、全球部署、永远在线）。
+
+**Worker 的不可替代职责：**
+- 接收飞书/Telegram 的 webhook 推送（用户发来的指令）
+- 解析指令内容（action、target、style 等）
+- 触发 GitHub Actions（workflow_dispatch）
+- 集中管理配置（KV 存 token、API Key 等）
+
+**Worker 可选的职责（可以不做）：**
+- 转发任务结果通知给用户（Python 可以直接发）
+- 格式化输出（Python 端可以自己格式化）
+
+**总结：**
+```
+收指令：用户 → 飞书/Telegram → Worker（必须）→ 触发 Actions
+发结果：Actions → Python 直接通知用户（不需要 Worker）
+         └→ 回调 Worker 更新状态（可选，用于面板同步）
+```
+
+---
+
 ## 背景
 
 GitHub Actions 执行完任务后，需要通知用户结果。有三种方案。

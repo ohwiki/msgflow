@@ -33,6 +33,15 @@ export class CleanService {
       },
     });
 
+    // Fix WeChat code blocks: <pre> with nested spans → fenced code block
+    this.turndown.addRule("weixinCodeBlock", {
+      filter: (node: any) => node.nodeName === "PRE",
+      replacement: (_content: string, node: any) => {
+        const text = node.textContent ?? "";
+        return `\n\`\`\`\n${text.trim()}\n\`\`\`\n`;
+      },
+    });
+
     // Remove empty links and spans
     this.turndown.addRule("cleanEmpty", {
       filter: (node: any) =>

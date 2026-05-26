@@ -10,6 +10,7 @@ import type { Logger } from "../lib/log.js";
 import layoutTpl from "../templates/layout.mustache";
 import fetchFormTpl from "../templates/partials/fetch-form.mustache";
 import articleTableTpl from "../templates/partials/article-table.mustache";
+import noteFormTpl from "../templates/partials/note-form.mustache";
 
 /** Shared template variables (CDN URLs etc.) */
 const baseVars = {
@@ -49,5 +50,11 @@ export async function pageHome(request: Request, env: Env, _log: Logger): Promis
 export async function pageFetch(_request: Request, _env: Env, _log: Logger): Promise<Response> {
   const content = Mustache.render(fetchFormTpl, {});
   const html = Mustache.render(layoutTpl, { ...baseVars, title: "抓取文章", content });
+  return Res.html(html);
+}
+
+export async function pageNote(_request: Request, _env: Env, _log: Logger): Promise<Response> {
+  const content = Mustache.render(noteFormTpl, {});
+  const html = Mustache.render(layoutTpl, { ...baseVars, title: "发布 note.com", content });
   return Res.html(html);
 }

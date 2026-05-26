@@ -87,8 +87,26 @@ class WeixinFetcher:
             else:
                 img.decompose()
 
+        # Fix code blocks: strip all spans/sections inside <pre>, keep only text
+        for pre in content_el.find_all("pre"):
+            # Replace <br> with newline before extracting text
+            for br in pre.find_all("br"):
+                br.replace_with("\n")
+            code_text = pre.get_text()
+            # Remove leading/trailing whitespace per line, collapse excess blank lines
+            lines = [line.rstrip() for line in code_text.split("\n")]
+            code_text = "\n".join(lines)
+            code_text = re.sub(r"\n{3,}", "\n\n", code_text).strip()
+            pre.clear()
+            code_tag = soup.new_tag("code")
+            code_tag.string = code_text
+            pre.append(code_tag)
+
         content = md(str(content_el), heading_style="ATX", code_language="")
         content = re.sub(r"\n{3,}", "\n\n", content).strip()
+        # Clean WeChat decorative blockquote markers
+        content = re.sub(r"> ❝\n>\s*\n>", ">", content)
+        content = re.sub(r"> ❝\s*\n", "", content)
 
         # Format as markdown with frontmatter
         parts = ["---"]

@@ -1,0 +1,45 @@
+<div class="card bg-base-100 shadow">
+  <div class="card-body">
+    <h2 class="card-title">发布到 note.com</h2>
+    <p class="text-sm text-base-content/60">上传中文 Markdown 文件，自动翻译成日文并发布为 note.com 草稿</p>
+    <form hx-post="/api/note/publish" hx-target="#note-result" hx-indicator="#note-loading" hx-encoding="multipart/form-data" class="mt-4 space-y-4">
+      <div>
+        <label class="label"><span class="label-text font-medium">Markdown 文件</span></label>
+        <input type="file" name="file" accept=".md,.txt,.markdown" class="file-input file-input-bordered w-full" required/>
+      </div>
+      <div>
+        <label class="label"><span class="label-text font-medium">标题（可选，留空自动提取）</span></label>
+        <input type="text" name="title" placeholder="翻译后的文章标题" class="input input-bordered w-full"/>
+      </div>
+      <div>
+        <label class="label"><span class="label-text font-medium">标签（逗号分隔）</span></label>
+        <input type="text" name="tags" placeholder="AI,プログラミング,Hermes" class="input input-bordered w-full"/>
+      </div>
+      <div>
+        <label class="label"><span class="label-text font-medium">目标语言</span></label>
+        <select name="lang" class="select select-bordered w-full">
+          <option value="ja" selected>日本語</option>
+          <option value="en">English</option>
+          <option value="zh">中文（不翻译）</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary w-full">翻译并发布草稿</button>
+    </form>
+    <div id="note-loading" class="htmx-indicator mt-4"><span class="loading loading-spinner loading-sm"></span> 翻訳 + 投稿中...（约30秒）</div>
+    <div id="note-result" class="mt-4"></div>
+  </div>
+</div>
+
+<div class="card bg-base-100 shadow mt-6">
+  <div class="card-body">
+    <h2 class="card-title text-sm">🔑 note.com Cookie 设置</h2>
+    <p class="text-xs text-base-content/60">浏览器打开 note.com → F12 → Application → Cookies → 复制 _note_session_v5 的值</p>
+    <form hx-post="/api/note/cookie" hx-target="#cookie-result" class="mt-2 space-y-2">
+      <div class="join w-full">
+        <input type="text" name="cookie" placeholder="_note_session_v5 的值" class="input input-bordered input-sm join-item flex-1"/>
+        <button type="submit" class="btn btn-sm btn-outline join-item">更新</button>
+      </div>
+    </form>
+    <div id="cookie-result" class="mt-2"></div>
+  </div>
+</div>

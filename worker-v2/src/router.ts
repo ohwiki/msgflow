@@ -19,7 +19,8 @@ import { authMiddleware } from "./services/auth-service.js";
 import { handleImageResize } from "./handlers/image-resize.js";
 import { apiShorten, handleShortRedirect } from "./handlers/short-url.js";
 import { pageArticlePreview } from "./handlers/article-preview.js";
-import { pageHome, pageFetch } from "./views/admin.js";
+import { apiNotePublish, apiNoteUpdateCookie } from "./handlers/api-note.js";
+import { pageHome, pageFetch, pageNote } from "./views/admin.js";
 
 type RouteHandler = (request: Request, env: Env, log: Logger) => Promise<Response>;
 
@@ -47,12 +48,15 @@ const publicRoutes: Route[] = [
 const adminRoutes: Route[] = [
   { method: "GET", path: "/", handler: pageHome },
   { method: "GET", path: "/fetch", handler: pageFetch },
+  { method: "GET", path: "/note", handler: pageNote },
   { method: "GET", path: "/settings", handler: pageSettings },
   { method: "POST", path: "/settings", handler: handleSettingsSubmit },
   { method: "POST", path: "/api/fetch", handler: apiFetch },
   { method: "POST", path: "/api/shorten", handler: apiShorten },
   { method: "GET", path: "/api/articles", handler: apiArticles },
   { method: "GET", path: "/api/feishu/token-status", handler: apiFeishuTokenStatus },
+  { method: "POST", path: "/api/note/publish", handler: apiNotePublish },
+  { method: "POST", path: "/api/note/cookie", handler: apiNoteUpdateCookie },
 ];
 
 // Public reader routes (read.xxx.com, no auth)

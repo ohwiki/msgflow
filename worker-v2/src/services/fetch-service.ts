@@ -72,9 +72,9 @@ export class FetchService {
     let r2MdKey: string | null = null;
     let status: string = ARTICLE_STATUS.RAW;
 
-    if (!result.hasCodeBlocks) {
+    if (true) {
       // For twitter/generic, content is already markdown from jina proxy
-      // For weixin/feishu, use turndown to convert HTML → Markdown
+      // For weixin/feishu, use turndown to convert HTML → Markdown (now handles code blocks too)
       const isAlreadyMarkdown = sourceType === SOURCE_TYPE.TWITTER || sourceType === SOURCE_TYPE.WEB;
       if (isAlreadyMarkdown) {
         r2MdKey = await this.fileRepo.putMarkdown(articleId, result.html);

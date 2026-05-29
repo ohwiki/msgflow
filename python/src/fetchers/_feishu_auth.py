@@ -1,7 +1,7 @@
 """Feishu token management — KV / local file / refresh."""
 from __future__ import annotations
 
-from pycore import logger, require_env
+from pycore import logger, require_env, env
 from pycore.http import get as http_get, post as http_post, HttpError
 
 from fetchers._feishu_api import FEISHU_API_BASE
@@ -84,10 +84,9 @@ class FeishuAuth:
     def _get_token_from_kv(self) -> str | None:
         """Fetch token from msgflow Worker KV via API."""
         import json
-        import os
         import time
 
-        worker_url = os.environ.get("MSGFLOW_WORKER_URL", "https://api.ouraihub.com")
+        worker_url = env("MSGFLOW_WORKER_URL") or "https://api.ouraihub.com"
         try:
             resp = http_get(f"{worker_url}/api/ci/config/feishu_user_token", timeout=5)
             data = json.loads(resp.body)
@@ -108,9 +107,8 @@ class FeishuAuth:
 
     def _refresh_user_token(self, refresh_token: str) -> dict | None:
         """Refresh user_access_token using refresh_token."""
-        import os
-        app_id = os.environ.get("FEISHU_APP_ID", "")
-        app_secret = os.environ.get("FEISHU_APP_SECRET", "")
+        app_id = env("FEISHU_APP_ID")
+        app_secret = env("FEISHU_APP_SECRET")
         if not app_id or not app_secret:
             log.warning("Cannot refresh: FEISHU_APP_ID/SECRET not set")
             return None

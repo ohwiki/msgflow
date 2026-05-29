@@ -10,3 +10,4 @@ from pipelines.rewrite import RewritePipeline  # noqa: E402, F401
 from pipelines.query import QueryPipeline  # noqa: E402, F401
 from pipelines.distill import DistillPipeline  # noqa: E402, F401
 from pipelines.publish import PublishPipeline  # noqa: E402, F401
+from pipelines.format_article import FormatArticlePipeline  # noqa: E402, F401

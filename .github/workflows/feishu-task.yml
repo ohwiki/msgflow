@@ -121,6 +121,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install playwright beautifulsoup4 lxml requests markdownify pypinyin
+          pip install -e python/
           playwright install chromium
           # 安装 mowen-cli
           curl -fSL -o /usr/local/bin/mowen-cli https://github.com/ohmycli/mowen-cli/releases/download/v0.4.0/mowen-cli-linux-x86_64
@@ -154,10 +155,10 @@ jobs:
           SKILL="${{ github.event.inputs.skill }}"
 
           case "$ACTION" in
-            rewrite)        python3 tools/run_task.py rewrite "$TARGET" --style "$STYLE" ;;
-            skill)          python3 tools/run_task.py skill "$TARGET" --skill "$SKILL" ;;
-            pending|lint)   python3 tools/run_task.py "$ACTION" ;;
-            *)              python3 tools/run_task.py "$ACTION" "$TARGET" ;;
+            rewrite)        python python/src/run_task.py rewrite "$TARGET" --style "$STYLE" ;;
+            skill)          python python/src/run_task.py skill "$TARGET" --skill "$SKILL" ;;
+            pending|lint)   python python/src/run_task.py "$ACTION" ;;
+            *)              python python/src/run_task.py "$ACTION" "$TARGET" ;;
           esac || true
 
           if [ -f /tmp/result.txt ] && [ -s /tmp/result.txt ]; then

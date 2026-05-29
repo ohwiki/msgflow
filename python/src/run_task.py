@@ -43,6 +43,15 @@ def publish(file: str, publisher: str = "mowen") -> None:
     _run("publish", file, publisher=publisher)
 
 
+@app.command(name="format-article")
+def format_article(
+    config_url: str = typer.Option(..., "--config-url"),
+    article_id: str = typer.Option(..., "--article-id"),
+) -> None:
+    """下载 R2 原始 HTML → 格式化为 Markdown → 回调 Worker"""
+    _run("format-article", "", config_url=config_url, article_id=article_id)
+
+
 @app.command()
 def skill(message: str, skill_name: str = typer.Option(..., "--skill")) -> None:
     """执行任意 skill"""

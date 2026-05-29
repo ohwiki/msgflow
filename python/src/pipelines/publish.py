@@ -29,4 +29,5 @@ class PublishPipeline:
         if success:
             log.info("Published", file=target, publisher=publisher_name)
             return Result.ok(f"✅ 已发布到 {publisher_name}：{target}")
-        return Result.fail(f"发布失败")
+        log.warning("Publish failed", file=target, publisher=publisher_name)
+        return Result.fail(f"发布失败: {publisher_name}")

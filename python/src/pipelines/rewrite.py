@@ -30,12 +30,14 @@ class RewritePipeline:
             article = path.read_text(encoding="utf-8") if path.exists() else None
 
         if not article:
+            log.warning("Cannot get article content", target=target[:80])
             return Result.fail("无法获取文章内容")
 
         # 2. AI rewrite
         prompt = f"请用你的风格改写以下文章。只输出改写后的完整文章正文。\n\n{article}"
         rewritten = run_skill(f"{style}-writer", prompt, timeout=300)
         if not rewritten:
+            log.warning("Rewrite failed", style=style, target=target[:80])
             return Result.fail("改写失败")
 
         # 3. Save

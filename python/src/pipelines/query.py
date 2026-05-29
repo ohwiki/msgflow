@@ -18,6 +18,7 @@ class QueryPipeline:
         prompt = f"请执行 Query 操作。问题：{target}。先读 wiki/index.md 找相关页面，然后综合回答。"
         result = run_skill("llmwiki-agent", prompt, timeout=300, workspace="llmwiki")
         if not result:
+            log.warning("Query failed", question=target[:50])
             return Result.fail("查询失败")
 
         log.info("Query complete", question=target[:50])

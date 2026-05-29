@@ -35,6 +35,7 @@ class FeishuFetcher:
                 return None
             token = self._get_token(app_id, app_secret)
             if not token:
+                log.error("Failed to get app token")
                 return None
 
         self._current_token = token
@@ -59,6 +60,7 @@ class FeishuFetcher:
         title = self._get_doc_title(token, doc_id)
         blocks = self._get_blocks(token, doc_id)
         if blocks is None:
+            log.error("Failed to get document blocks", doc_id=doc_id)
             return None
 
         self._doc_id = doc_id
@@ -119,6 +121,7 @@ class FeishuFetcher:
         # Fallback to local file
         token_file = Path.home() / ".feishu_token.json"
         if not token_file.exists():
+            log.info("No feishu token file and no KV token")
             return None
 
         data = json.loads(token_file.read_text())
@@ -129,12 +132,14 @@ class FeishuFetcher:
 
         if saved_at and time.time() - saved_at > expires_in - 300:
             if not refresh_token:
+                log.warning("User token expired and no refresh_token")
                 return None
             new_data = self._refresh_user_token(refresh_token)
             if new_data:
                 new_data["_saved_at"] = time.time()
                 token_file.write_text(json.dumps(new_data, indent=2))
                 return new_data.get("access_token")
+            log.warning("User token refresh failed")
             return None
 
         if not saved_at and access_token:
@@ -156,14 +161,17 @@ class FeishuFetcher:
             token_data = json.loads(data.get("value", "{}")) if isinstance(data.get("value"), str) else data
             access_token = token_data.get("access_token")
             if not access_token:
+                log.info("KV token has no access_token")
                 return None
             # Check expiry
             saved_at = token_data.get("_saved_at", 0)
             expires_in = token_data.get("expires_in", 7200)
             if saved_at and time.time() - saved_at > expires_in - 300:
+                log.info("KV token expired, waiting for cron refresh")
                 return None  # Expired, let cron refresh it
             return access_token
         except Exception:
+            log.info("KV token fetch failed, will try local file")
             return None
 
     def _refresh_user_token(self, refresh_token: str) -> dict | None:
@@ -172,6 +180,7 @@ class FeishuFetcher:
         app_id = os.environ.get("FEISHU_APP_ID", "")
         app_secret = os.environ.get("FEISHU_APP_SECRET", "")
         if not app_id or not app_secret:
+            log.warning("Cannot refresh: FEISHU_APP_ID/SECRET not set")
             return None
 
         try:
@@ -183,6 +192,7 @@ class FeishuFetcher:
             )
             app_token = resp.json().get("app_access_token")
             if not app_token:
+                log.error("Cannot get app_access_token for refresh")
                 return None
 
             # Refresh user token
@@ -240,8 +250,8 @@ class FeishuFetcher:
             data = resp.json()
             if data.get("code") == 0:
                 return data.get("data", {}).get("node", {}).get("obj_token")
-        except HttpError:
-            pass
+        except HttpError as e:
+            log.warning("Wiki node lookup failed", wiki_token=wiki_token, status=e.status)
         return None
 
     def _get_doc_title(self, token: str, doc_id: str) -> str:
@@ -254,8 +264,8 @@ class FeishuFetcher:
             data = resp.json()
             if data.get("code") == 0:
                 return data.get("data", {}).get("document", {}).get("title", "")
-        except HttpError:
-            pass
+        except HttpError as e:
+            log.warning("Get doc title failed", doc_id=doc_id, status=e.status)
         return ""
 
     def _get_blocks(self, token: str, doc_id: str) -> list | None:

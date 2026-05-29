@@ -1,0 +1,43 @@
+# GitLab CI — Fetch & Format Article
+#
+# Trigger via API: POST /projects/:id/trigger/pipeline
+#   variables: { ARTICLE_ID, CONFIG_URL }
+
+stages:
+  - format
+
+fetch-and-format:
+  stage: format
+  image: nikolaik/python-nodejs:python3.12-nodejs20
+  rules:
+    - if: $ARTICLE_ID && $CONFIG_URL
+  script:
+    # Install tools
+    - pip install -q beautifulsoup4 markdownify
+    - npm install -g prettier sql-formatter --silent
+
+    # Get config from Worker (one-time token)
+    - |
+      CONFIG=$(curl -sf "${CONFIG_URL}")
+      if [ -z "$CONFIG" ]; then echo "Token expired or invalid"; exit 1; fi
+      export CF_ACCOUNT_ID=$(echo $CONFIG | python3 -c "import sys,json; print(json.load(sys.stdin)['cf_account_id'])")
+      export CF_API_TOKEN=$(echo $CONFIG | python3 -c "import sys,json; print(json.load(sys.stdin)['cf_api_token'])")
+      export CALLBACK_URL=$(echo $CONFIG | python3 -c "import sys,json; print(json.load(sys.stdin)['callback_url'])")
+      export CALLBACK_SECRET=$(echo $CONFIG | python3 -c "import sys,json; print(json.load(sys.stdin)['callback_secret'])")
+      export R2_RAW_KEY=$(echo $CONFIG | python3 -c "import sys,json; print(json.load(sys.stdin)['r2_raw_key'])")
+
+    # Download raw HTML from R2
+    - |
+      curl -sf -o /tmp/raw.html \
+        -H "Authorization: Bearer ${CF_API_TOKEN}" \
+        "https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/r2/buckets/msgflow-files/objects/${R2_RAW_KEY}"
+
+    # Format
+    - python3 scripts/format_article.py /tmp/raw.html /tmp/output.md
+
+    # Callback
+    - |
+      MARKDOWN_JSON=$(python3 -c "import json; print(json.dumps(open('/tmp/output.md').read()))")
+      curl -sf -X POST "${CALLBACK_URL}" \
+        -H "Content-Type: application/json" \
+        -d "{\"article_id\": \"${ARTICLE_ID}\", \"markdown\": ${MARKDOWN_JSON}, \"secret\": \"${CALLBACK_SECRET}\"}"

@@ -1,0 +1,57 @@
+name = "msgflow-v2"
+main = "src/index.ts"
+compatibility_date = "2025-05-20"
+
+rules = [
+  { type = "Text", globs = ["**/*.mustache"] }
+]
+
+[triggers]
+crons = ["0 */3 * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "msgflow-content"
+database_id = "4e445ab4-f8c4-4346-b234-f81973b5babe"
+
+[[r2_buckets]]
+binding = "R2"
+bucket_name = "msgflow-files"
+
+[[kv_namespaces]]
+binding = "KV"
+id = "7158494aa5804d02ae472f82d4b61199"
+
+# ─── Dev 环境 ───────────────────────────────
+# 部署命令: npx wrangler dev (自动使用)
+# 或: npx wrangler deploy --env dev
+[env.dev.vars]
+WORKER_URL = "http://localhost:8788"
+ADMIN_HOST = ""
+
+# ─── Production 环境 ────────────────────────
+# 部署命令: npx wrangler deploy --env production
+# admin.ouraihub.com — 后台管理（需登录）
+# api.ouraihub.com — 公开服务（短链/图片/文章API）
+[env.production]
+routes = [
+  { pattern = "admin.ouraihub.com", custom_domain = true },
+  { pattern = "api.ouraihub.com", custom_domain = true },
+]
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "msgflow-content"
+database_id = "4e445ab4-f8c4-4346-b234-f81973b5babe"
+
+[[env.production.r2_buckets]]
+binding = "R2"
+bucket_name = "msgflow-files"
+
+[[env.production.kv_namespaces]]
+binding = "KV"
+id = "7158494aa5804d02ae472f82d4b61199"
+
+[env.production.vars]
+WORKER_URL = "https://api.ouraihub.com"
+ADMIN_HOST = "admin.ouraihub.com"

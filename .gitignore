@@ -5,3 +5,4 @@ worker/wrangler.toml
 worker/.wrangler/
 .env
 __pycache__/
+site/

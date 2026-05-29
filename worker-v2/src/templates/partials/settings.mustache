@@ -1,0 +1,51 @@
+<div class="max-w-lg mx-auto">
+  <h1 class="text-2xl font-bold mb-6">设置</h1>
+  {{#success}}<div class="alert alert-success text-sm mb-4">✓ {{success}}</div>{{/success}}
+  {{#error}}<div class="alert alert-error text-sm mb-4">✗ {{error}}</div>{{/error}}
+
+  <div class="card bg-base-100 shadow mb-6">
+    <div class="card-body gap-0">
+      <h2 class="card-title text-lg mb-4">GitHub 集成</h2>
+      <form method="POST" action="/settings" class="space-y-4">
+        <input type="hidden" name="action" value="save_github"/>
+        <label class="form-control w-full">
+          <div class="label"><span class="label-text font-medium">GitHub Token</span></div>
+          <input type="password" name="github_token" value="{{github_token_masked}}" class="input input-bordered w-full" placeholder="ghp_..."/>
+          <div class="label"><span class="label-text-alt text-base-content/50">需要 repo + workflow 权限</span></div>
+        </label>
+        <label class="form-control w-full">
+          <div class="label"><span class="label-text font-medium">GitHub Repo</span></div>
+          <input type="text" name="github_repo" value="{{github_repo}}" class="input input-bordered w-full" placeholder="owner/repo"/>
+        </label>
+        <div class="pt-2">
+          <button type="submit" class="btn btn-primary w-full">保存 GitHub 配置</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card bg-base-100 shadow">
+    <div class="card-body gap-0">
+      <h2 class="card-title text-lg mb-4">修改密码</h2>
+      <form method="POST" action="/settings" class="space-y-4">
+        <input type="hidden" name="action" value="change_password"/>
+        <label class="form-control w-full">
+          <div class="label"><span class="label-text font-medium">当前密码</span></div>
+          <input type="password" name="current_password" class="input input-bordered w-full" required/>
+        </label>
+        <label class="form-control w-full">
+          <div class="label"><span class="label-text font-medium">新密码</span></div>
+          <input type="password" name="new_password" class="input input-bordered w-full" required minlength="6"/>
+          <div class="label"><span class="label-text-alt text-base-content/50">至少 6 位</span></div>
+        </label>
+        <label class="form-control w-full">
+          <div class="label"><span class="label-text font-medium">确认新密码</span></div>
+          <input type="password" name="confirm_password" class="input input-bordered w-full" required minlength="6"/>
+        </label>
+        <div class="pt-2">
+          <button type="submit" class="btn btn-primary w-full">保存密码</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

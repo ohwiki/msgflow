@@ -3,8 +3,9 @@
 from dataclasses import dataclass
 
 from lib.registry import Registry
+from lib.protocols import Fetcher
 
-fetcher_registry: Registry = Registry("fetcher")
+fetcher_registry: Registry[Fetcher] = Registry("fetcher")
 
 
 @dataclass

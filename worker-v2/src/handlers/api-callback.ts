@@ -6,6 +6,17 @@
 
 import { Res } from "../lib/response.js";
 import { ValidationError, NotFoundError } from "../lib/errors.js";
+
+/** Constant-time string comparison to prevent timing attacks. */
+function timingSafeEqual(a: string, b: string): boolean {
+  const encoder = new TextEncoder();
+  const bufA = encoder.encode(a);
+  const bufB = encoder.encode(b);
+  if (bufA.byteLength !== bufB.byteLength) return false;
+  let result = 0;
+  for (let i = 0; i < bufA.byteLength; i++) result |= (bufA[i] ?? 0) ^ (bufB[i] ?? 0);
+  return result === 0;
+}
 import { ArticleRepository } from "../repositories/article-repository.js";
 import { FileRepository } from "../repositories/file-repository.js";
 import { GitService } from "../services/git-service.js";
@@ -24,7 +35,7 @@ export async function apiCallback(request: Request, env: Env, log: Logger): Prom
   const expectedSecret = env.CALLBACK_SECRET ?? "";
   const body = await request.json<CallbackPayload>();
 
-  if (expectedSecret && body.secret !== expectedSecret) {
+  if (expectedSecret && !timingSafeEqual(expectedSecret, body.secret ?? "")) {
     throw new ValidationError("Invalid callback secret");
   }
   if (!body.article_id || !body.markdown) {

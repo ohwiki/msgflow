@@ -13,8 +13,28 @@ import { ArticleRepository } from "../repositories/article-repository.js";
 import { fetchWithTimeout } from "../lib/http.js";
 import type { Logger } from "../lib/log.js";
 
+interface FeishuWebhookPayload {
+  type?: string;
+  challenge?: string;
+  header?: {
+    token?: string;
+    event_id?: string;
+    event_type?: string;
+  };
+  event?: {
+    message?: {
+      chat_id?: string;
+      content?: string;
+      message_type?: string;
+    };
+    sender?: {
+      sender_id?: { open_id?: string };
+    };
+  };
+}
+
 export async function handleFeishuWebhook(request: Request, env: Env, log: Logger): Promise<Response> {
-  const body = await request.json() as Record<string, unknown>;
+  const body = await request.json<FeishuWebhookPayload>();
 
   // URL 验证（飞书首次配置回调时）
   if (body.type === "url_verification") {
@@ -22,7 +42,7 @@ export async function handleFeishuWebhook(request: Request, env: Env, log: Logge
   }
 
   // 验证 token
-  const header = body.header as { token?: string; event_id?: string; event_type?: string } | undefined;
+  const header = body.header;
   if (!header || header.token !== env.FEISHU_VERIFICATION_TOKEN) {
     return Res.text("Unauthorized", HTTP_STATUS.UNAUTHORIZED);
   }
@@ -36,7 +56,7 @@ export async function handleFeishuWebhook(request: Request, env: Env, log: Logge
 
   if (header.event_type !== "im.message.receive_v1") return Res.text("OK");
 
-  const event = body.event as { message?: { message_type?: string; content?: string; chat_id?: string } } | undefined;
+  const event = body.event;
   const message = event?.message;
   if (!message || message.message_type !== "text" || !message.chat_id) return Res.text("OK");
 

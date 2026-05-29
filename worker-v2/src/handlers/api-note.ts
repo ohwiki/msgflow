@@ -16,13 +16,11 @@ import { Res } from "../lib/response.js";
 import { ValidationError, AppError } from "../lib/errors.js";
 import type { Logger } from "../lib/log.js";
 
-const AI_API_BASE = "https://fast.sbbbbbbbbb.xyz/v1";
-const AI_MODEL = "gpt-5.4";
 const NOTE_API_BASE = "https://note.com/api/v1";
 
 // --- Translation ---
 
-async function translateMarkdown(content: string, lang: string, apiKey: string): Promise<string> {
+async function translateMarkdown(content: string, lang: string, apiKey: string, apiBase: string, model: string): Promise<string> {
   const prompt = `把以下中文技术教程翻译成${lang === "ja" ? "日文" : lang}。规则：
 1. 保留代码块内容不翻译
 2. 技术术语保留英文原文
@@ -34,10 +32,10 @@ ${content}`;
 
   let resp: Response;
   try {
-    resp = await fetch(`${AI_API_BASE}/chat/completions`, {
+    resp = await fetch(`${apiBase}/chat/completions`, {
       method: "POST",
       headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: AI_MODEL, messages: [{ role: "user", content: prompt }] }),
+      body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }] }),
     });
   } catch (e: any) {
     throw new AppError(`Translation API network error: ${e.message}`, "TRANSLATE_NETWORK_ERROR", 502);
@@ -222,7 +220,9 @@ export async function apiNotePublish(request: Request, env: Env, log: Logger): P
 
   // 1. Translate
   log.info("note_translate_start", { lang, contentLength: String(mdContent.length) });
-  const translated = await translateMarkdown(mdContent, lang, apiKey);
+  const apiBase = await env.KV.get("note:ai_api_base") || "https://api.openai.com/v1";
+  const aiModel = await env.KV.get("note:ai_model") || "gpt-4o-mini";
+  const translated = await translateMarkdown(mdContent, lang, apiKey, apiBase, aiModel);
   log.info("note_translate_done", { translatedLength: String(translated.length) });
 
   // 2. Extract title from translated content (first h1) or use provided

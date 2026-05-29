@@ -1,8 +1,9 @@
 """Publishers — auto-registered on import."""
 
 from lib.registry import Registry
+from lib.protocols import Publisher
 
-publishers: Registry = Registry("publisher")
+publishers: Registry[Publisher] = Registry("publisher")
 
 from writers.mowen import MowenPublisher  # noqa: E402, F401
 from writers.feishu import FeishuPublisher  # noqa: E402, F401
@@ -13,4 +14,5 @@ def publish(name: str, title: str, content: str, **kwargs: object) -> bool:
     pub = publishers.get(name)
     if not pub:
         return False
-    return pub.publish(title, content, kwargs)
+    metadata = dict(kwargs) if kwargs else None
+    return pub.publish(title, content, metadata)

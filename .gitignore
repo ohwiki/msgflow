@@ -6,3 +6,4 @@ worker/.wrangler/
 .env
 __pycache__/
 site/
+python/src/images/

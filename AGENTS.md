@@ -101,3 +101,27 @@ src/
 ├── writers/          # 发布实现
 └── pipelines/        # 业务流水线
 ```
+
+**pycore 使用规范（必须遵守）：**
+
+项目依赖 `pycore` 包（`https://github.com/ouraihub/pycore`），提供以下能力。**禁止重复造轮子**：
+
+| pycore 提供 | 用法 | 禁止的替代写法 |
+|---|---|---|
+| `pycore.logger(name)` | 结构化日志 | ❌ `import logging` |
+| `pycore.env(key)` | 读环境变量（返回 str 或 ""） | ❌ `os.environ.get(key, "")` |
+| `pycore.require_env(key)` | 读必需环境变量（缺失抛异常） | ❌ `os.environ[key]` |
+| `pycore.load_dotenv()` | 加载 .env | ❌ `from dotenv import load_dotenv` |
+| `pycore.Result` | 统一返回值（ok/fail） | ❌ 自定义 result dict |
+| `pycore.output_result(r)` | CLI 输出 Result | ❌ `print(json.dumps(...))` |
+| `pycore.http.get(url, ...)` | HTTP GET（返回 Response） | ❌ `urllib.request` / `requests.get` |
+| `pycore.http.post(url, ...)` | HTTP POST | ❌ `urllib.request` / `requests.post` |
+| `pycore.http.HttpError` | HTTP 异常类 | ❌ 自定义异常 |
+| `pycore.run_batch(items, fn)` | 并发批量执行 | ❌ 手写 ThreadPoolExecutor |
+| `pycore.run_parallel(fns)` | 并行执行多个函数 | ❌ 手写 asyncio.gather |
+| `pycore.errors.*` | 业务异常层次（AppError, ValidationError 等） | ❌ 自定义异常类 |
+
+**例外情况（允许不用 pycore）：**
+- `urllib.parse`（URL 编码/解码）— pycore 不提供
+- `subprocess`（调用外部 CLI）— pycore 不提供
+- `requests`（仅在 pycore.http 不支持二进制下载时）— 需注释说明原因

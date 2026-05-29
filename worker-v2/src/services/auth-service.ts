@@ -19,9 +19,17 @@ export class AuthService {
   /** Verify password and create session. Returns session token or null. */
   async login(password: string): Promise<string | null> {
     const config = await this.configRepo.getAuthConfig();
-    const hash = await this.hashPassword(password);
+    const storedHash = config.password_hash ?? "";
+    if (!storedHash) return null;
 
-    if (hash !== config.password_hash) return null;
+    const valid = await this.verifyPassword(password, storedHash);
+    if (!valid) return null;
+
+    // Auto-migrate legacy SHA-256 hash to PBKDF2
+    if (!storedHash.includes(":")) {
+      const newHash = await this.hashPassword(password);
+      await this.configRepo.setAuthConfig({ ...config, password_hash: newHash });
+    }
 
     const token = crypto.randomUUID();
     const expires = Date.now() + DEFAULTS.SESSION_TTL_MS;
@@ -43,14 +51,45 @@ export class AuthService {
     await this.configRepo.deleteSession(token);
   }
 
-  /** Hash password with SHA-256. */
+  /** Hash password with PBKDF2 + random salt. Format: salt:hash (hex). */
   async hashPassword(password: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    return Array.from(new Uint8Array(hashBuffer))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const key = await this.deriveKey(password, salt);
+    return `${this.toHex(salt)}:${this.toHex(new Uint8Array(key))}`;
+  }
+
+  /** Verify password against stored hash. Supports legacy SHA-256 (auto-migrate). */
+  async verifyPassword(password: string, storedHash: string): Promise<boolean> {
+    if (!storedHash.includes(":")) {
+      const legacyHash = await this.legacySha256(password);
+      return legacyHash === storedHash;
+    }
+    const parts = storedHash.split(":");
+    const saltHex = parts[0] ?? "";
+    const expectedHash = parts[1] ?? "";
+    const salt = this.fromHex(saltHex);
+    const key = await this.deriveKey(password, salt);
+    return this.toHex(new Uint8Array(key)) === expectedHash;
+  }
+
+  private async deriveKey(password: string, salt: Uint8Array): Promise<ArrayBuffer> {
+    const keyMaterial = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+    return crypto.subtle.deriveBits({ name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" }, keyMaterial, 256);
+  }
+
+  private async legacySha256(password: string): Promise<string> {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(password));
+    return this.toHex(new Uint8Array(buf));
+  }
+
+  private toHex(bytes: Uint8Array): string {
+    return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  private fromHex(hex: string): Uint8Array {
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length; i += 2) bytes[i / 2] = parseInt(hex.slice(i, i + 2), 16);
+    return bytes;
   }
 }
 

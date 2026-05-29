@@ -1,4 +1,9 @@
-"""Feishu document publisher."""
+"""Feishu document publisher.
+
+TODO: 当前只创建文档标题，未写入正文内容。
+需要调用 POST /docx/v1/documents/{doc_id}/blocks/{doc_id}/children 写入 block。
+参考：https://open.feishu.cn/document/server-docs/docs/docs/docx-v1/document-block-children/create
+"""
 
 from __future__ import annotations
 

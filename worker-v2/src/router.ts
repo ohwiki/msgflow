@@ -8,6 +8,7 @@ import { apiFetch } from "./handlers/api-fetch.js";
 import { apiArticles, apiArticleDetail, apiArticleDelete, apiArticlePublish } from "./handlers/api-articles.js";
 import { apiCallback } from "./handlers/api-callback.js";
 import { apiCiConfig } from "./handlers/api-ci-config.js";
+import { apiAiConfig } from "./handlers/api-ai-config.js";
 import { apiCiDownload } from "./handlers/api-ci-download.js";
 import { handleLoginPage, handleLoginSubmit, handleLogout } from "./handlers/auth.js";
 import { handleGoogleLogin, handleGoogleCallback } from "./handlers/auth-google.js";
@@ -41,6 +42,7 @@ const publicRoutes: Route[] = [
   { method: "POST", path: "/webhook/feishu", handler: handleFeishuWebhook },
   { method: "POST", path: "/api/callback", handler: apiCallback },
   { method: "GET", path: "/api/ci-config", handler: apiCiConfig },
+  { method: "GET", path: "/api/ai-config", handler: apiAiConfig },
   { method: "GET", path: "/api/ci-download", handler: apiCiDownload },
 ];
 

@@ -116,4 +116,11 @@ export class ArticleRepository implements IArticleRepository {
       .bind(tags, id)
       .run();
   }
+
+  async updateTitle(id: string, title: string): Promise<void> {
+    await this.db
+      .prepare("UPDATE articles SET title = ?, updated_at = datetime('now') WHERE id = ?")
+      .bind(title, id)
+      .run();
+  }
 }

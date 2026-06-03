@@ -19,8 +19,14 @@ export async function pageArticlePreview(request: Request, env: Env, log: Logger
   let htmlContent = "<p>文章尚未清洗，暂无 Markdown 内容。</p>";
   if (article.r2_md_key) {
     const fileRepo = new FileRepository(env.R2);
-    const md = await fileRepo.get(article.r2_md_key);
-    if (md) htmlContent = await marked(md);
+    let md = await fileRepo.get(article.r2_md_key);
+    if (md) {
+      // Clean Discourse lightbox patterns: [![alt](thumb)\nsize text](full) → ![alt](thumb)
+      md = md.replace(/\[!\[([^\]]*)\]\(([^)]+)\)\s*\n\n[^\]]*\]\([^)]+\)/g, "![$1]($2)");
+      // Remove standalone dimension lines like "1920×979 211 KB"
+      md = md.replace(/^\d+×\d+\s+\d+[\s\S]?KB\s*$/gm, "");
+      htmlContent = await marked(md);
+    }
   }
 
   const html = `<!DOCTYPE html>

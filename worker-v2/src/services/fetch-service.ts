@@ -60,7 +60,7 @@ export class FetchService {
     if (!fetcher) throw new FetchError(url, "No fetcher available");
 
     this.log.info("fetch_start", { url });
-    const result = await fetcher.fetch(url, this.env);
+    const result = await fetcher.fetch(url, this.env, this.log);
 
     const articleId = crypto.randomUUID();
     const sourceType = detectSourceType(url);
@@ -75,7 +75,7 @@ export class FetchService {
     if (true) {
       // For twitter/generic, content is already markdown from jina proxy
       // For weixin/feishu, use turndown to convert HTML → Markdown (now handles code blocks too)
-      const isAlreadyMarkdown = sourceType === SOURCE_TYPE.TWITTER || sourceType === SOURCE_TYPE.WEB;
+      const isAlreadyMarkdown = sourceType === SOURCE_TYPE.TWITTER || sourceType === SOURCE_TYPE.WEB || result.isMarkdown;
       if (isAlreadyMarkdown) {
         r2MdKey = await this.fileRepo.putMarkdown(articleId, result.html);
       } else {

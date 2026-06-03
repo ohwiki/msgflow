@@ -62,9 +62,10 @@ export async function apiFetch(request: Request, env: Env, log: Logger): Promise
       `);
     }
     return Res.json(result);
-  } catch (e: any) {
-    log.error("fetch_error", { url, error: e.message });
-    if (isHtmx) return Res.html(`<div class="alert alert-error">❌ 抓取失败：${e.message}</div>`);
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : "unknown";
+    log.error("fetch_error", { url: url || "", error: msg });
+    if (isHtmx) return Res.html(`<div class="alert alert-error">❌ 抓取失败：${msg}</div>`);
     throw e;
   }
 }

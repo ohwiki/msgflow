@@ -6,13 +6,14 @@ import type { Fetcher, FetchResult } from "../types/fetcher.js";
 import { fetchWithTimeout } from "../lib/http.js";
 import { FetchError } from "../lib/errors.js";
 import { URL_PATTERN, EXTERNAL_URL } from "../lib/constants.js";
+import type { Logger } from "../lib/log.js";
 
 export const feishuFetcher: Fetcher = {
   canHandle(url: string): boolean {
     return URL_PATTERN.FEISHU.some((p) => url.includes(p));
   },
 
-  async fetch(url: string, env: Env): Promise<FetchResult> {
+  async fetch(url: string, env: Env, log: Logger): Promise<FetchResult> {
     const appId = env.FEISHU_APP_ID;
     const appSecret = env.FEISHU_APP_SECRET;
     if (!appId || !appSecret) throw new FetchError(url, "FEISHU_APP_ID and FEISHU_APP_SECRET required");

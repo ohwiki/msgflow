@@ -10,16 +10,12 @@
       <div>
         <label class="label"><span class="label-text font-medium">分类标签</span></label>
         <div class="flex flex-wrap gap-2" id="tag-options">
-          <label class="cursor-pointer"><input type="checkbox" name="tags" value="AI" class="checkbox checkbox-xs checkbox-primary"/> <span class="text-sm">AI</span></label>
-          <label class="cursor-pointer"><input type="checkbox" name="tags" value="Cloudflare" class="checkbox checkbox-xs checkbox-primary"/> <span class="text-sm">Cloudflare</span></label>
-          <label class="cursor-pointer"><input type="checkbox" name="tags" value="教程" class="checkbox checkbox-xs checkbox-primary"/> <span class="text-sm">教程</span></label>
-          <label class="cursor-pointer"><input type="checkbox" name="tags" value="工具" class="checkbox checkbox-xs checkbox-primary"/> <span class="text-sm">工具</span></label>
-          <label class="cursor-pointer"><input type="checkbox" name="tags" value="前端" class="checkbox checkbox-xs checkbox-primary"/> <span class="text-sm">前端</span></label>
-          <label class="cursor-pointer"><input type="checkbox" name="tags" value="后端" class="checkbox checkbox-xs checkbox-primary"/> <span class="text-sm">后端</span></label>
-          <label class="cursor-pointer"><input type="checkbox" name="tags" value="产品" class="checkbox checkbox-xs checkbox-primary"/> <span class="text-sm">产品</span></label>
-          <label class="cursor-pointer"><input type="checkbox" name="tags" value="效率" class="checkbox checkbox-xs checkbox-primary"/> <span class="text-sm">效率</span></label>
+          {{#tags}}
+          <label class="cursor-pointer"><input type="checkbox" name="tags" value="{{name}}" class="checkbox checkbox-xs checkbox-primary"/> <span class="text-sm">{{name}}</span></label>
+          {{/tags}}
+          {{^tags}}<span class="text-sm text-base-content/40">暂无标签，在下方自定义添加</span>{{/tags}}
         </div>
-        <input type="text" name="custom_tags" placeholder="自定义标签（逗号分隔）" class="input input-bordered input-sm w-full mt-2"/>
+        <input type="text" name="custom_tags" placeholder="自定义标签（逗号分隔，新标签会自动保存）" class="input input-bordered input-sm w-full mt-2"/>
       </div>
     </form>
     <div id="fetch-loading" class="htmx-indicator mt-4"><span class="loading loading-spinner loading-sm"></span> 正在抓取...</div>

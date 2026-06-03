@@ -43,7 +43,7 @@ export class ArticleRepository implements IArticleRepository {
   }
 
   async list(opts: ListOptions = {}): Promise<Article[]> {
-    const { status, source, limit = 20, offset = 0 } = opts;
+    const { status, source, tag, limit = 20, offset = 0 } = opts;
     let sql = "SELECT * FROM articles WHERE 1=1";
     const params: unknown[] = [];
 
@@ -55,12 +55,30 @@ export class ArticleRepository implements IArticleRepository {
       sql += " AND source_type = ?";
       params.push(source);
     }
+    if (tag) {
+      sql += " AND tags LIKE ?";
+      params.push(`%"${tag}"%`);
+    }
 
     sql += " ORDER BY fetched_at DESC LIMIT ? OFFSET ?";
     params.push(limit, offset);
 
     const { results } = await this.db.prepare(sql).bind(...params).all<Article>();
     return results ?? [];
+  }
+
+  async getAllTags(): Promise<string[]> {
+    const { results } = await this.db
+      .prepare("SELECT DISTINCT tags FROM articles WHERE tags != '[]' AND tags IS NOT NULL")
+      .all<{ tags: string }>();
+    const tagSet = new Set<string>();
+    for (const row of results ?? []) {
+      try {
+        const arr = JSON.parse(row.tags) as string[];
+        arr.forEach((t) => tagSet.add(t));
+      } catch { /* skip */ }
+    }
+    return [...tagSet].sort();
   }
 
   async count(opts: { status?: string } = {}): Promise<number> {

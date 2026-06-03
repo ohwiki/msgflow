@@ -21,7 +21,14 @@ const baseVars = {
 export async function pageSettings(_request: Request, env: Env, _log: Logger): Promise<Response> {
   const github_token = await env.KV.get("github_token") || "";
   const github_repo = await env.KV.get("github_repo") || "";
-  return renderSettings({ github_token_masked: github_token ? "••••••••" : "", github_repo });
+  const tavily_key = await env.KV.get("tavily_api_key") || "";
+  const exa_key = await env.KV.get("exa_api_key") || "";
+  return renderSettings({
+    github_token_masked: github_token ? "••••••••" : "",
+    github_repo,
+    tavily_key_value: tavily_key,
+    exa_key_value: exa_key,
+  });
 }
 
 export async function handleSettingsSubmit(request: Request, env: Env, log: Logger): Promise<Response> {
@@ -45,6 +52,19 @@ export async function handleSettingsSubmit(request: Request, env: Env, log: Logg
     return renderSettings({ success: "GitHub 配置已保存", github_token_masked: github_token ? "••••••••" : "", github_repo });
   }
 
+  if (action === "save_api_keys") {
+    const tavily = (formData.get("tavily_api_key") as string)?.trim();
+    const exa = (formData.get("exa_api_key") as string)?.trim();
+
+    if (tavily && !tavily.startsWith("••")) await env.KV.put("tavily_api_key", tavily);
+    if (exa && !exa.startsWith("••")) await env.KV.put("exa_api_key", exa);
+
+    log.info("api_keys_saved");
+    const tavily_key = await env.KV.get("tavily_api_key") || "";
+    const exa_key = await env.KV.get("exa_api_key") || "";
+    return renderSettings({ success: "API 配置已保存", tavily_key_value: tavily_key, exa_key_value: exa_key });
+  }
+
   if (action === "change_password") {
     const currentPassword = formData.get("current_password") as string ?? "";
     const newPassword = formData.get("new_password") as string ?? "";
@@ -60,9 +80,9 @@ export async function handleSettingsSubmit(request: Request, env: Env, log: Logg
     const auth = new AuthService(env);
     const configRepo = new ConfigRepository(env.KV);
     const config = await configRepo.getAuthConfig();
-    const currentHash = await auth.hashPassword(currentPassword);
+    const valid = await auth.verifyPassword(currentPassword, config.password_hash ?? "");
 
-    if (currentHash !== config.password_hash) {
+    if (!valid) {
       log.warn("password_change_failed");
       return renderSettings({ error: "当前密码错误" });
     }
@@ -77,7 +97,7 @@ export async function handleSettingsSubmit(request: Request, env: Env, log: Logg
   return renderSettings({});
 }
 
-function renderSettings(data: { success?: string; error?: string; github_token_masked?: string; github_repo?: string }): Response {
+function renderSettings(data: { success?: string; error?: string; github_token_masked?: string; github_repo?: string; tavily_key_value?: string; exa_key_value?: string }): Response {
   const content = Mustache.render(settingsTpl, data);
   const html = Mustache.render(layoutTpl, { ...baseVars, title: "设置", content });
   return Res.html(html);

@@ -6,13 +6,14 @@ import type { Fetcher, FetchResult } from "../types/fetcher.js";
 import { fetchWithTimeout } from "../lib/http.js";
 import { FetchError } from "../lib/errors.js";
 import { URL_PATTERN, EXTERNAL_URL, DEFAULTS } from "../lib/constants.js";
+import type { Logger } from "../lib/log.js";
 
 export const twitterFetcher: Fetcher = {
   canHandle(url: string): boolean {
     return URL_PATTERN.TWITTER.some((p) => url.includes(p));
   },
 
-  async fetch(url: string): Promise<FetchResult> {
+  async fetch(url: string, _env: Env, _log: Logger): Promise<FetchResult> {
     const resp = await fetchWithTimeout(`${EXTERNAL_URL.JINA_PROXY}/${url}`, {
       headers: { Accept: "text/markdown" },
       timeoutMs: DEFAULTS.PROXY_TIMEOUT_MS,

@@ -24,6 +24,36 @@
     </div>
   </div>
 
+  <div class="card bg-base-100 shadow mb-6">
+    <div class="card-body gap-0">
+      <h2 class="card-title text-lg mb-4">第三方 API（微信抓取 fallback）</h2>
+      <form method="POST" action="/settings" class="space-y-4">
+        <input type="hidden" name="action" value="save_api_keys"/>
+        <label class="form-control w-full">
+          <div class="label"><span class="label-text font-medium">Tavily API Key</span></div>
+          <div class="join w-full">
+            <input type="password" name="tavily_api_key" id="tavily_input" value="{{tavily_key_value}}" class="input input-bordered join-item w-full" placeholder="tvly-..."/>
+            <button type="button" class="btn join-item" onclick="const i=document.getElementById('tavily_input');i.type=i.type==='password'?'text':'password'">👁</button>
+            <button type="button" class="btn join-item" onclick="navigator.clipboard.writeText(document.getElementById('tavily_input').value);this.textContent='✓';setTimeout(()=>this.textContent='📋',1000)">📋</button>
+          </div>
+          <div class="label"><span class="label-text-alt text-base-content/50">用于穿透微信验证页，优先使用</span></div>
+        </label>
+        <label class="form-control w-full">
+          <div class="label"><span class="label-text font-medium">Exa API Key</span></div>
+          <div class="join w-full">
+            <input type="password" name="exa_api_key" id="exa_input" value="{{exa_key_value}}" class="input input-bordered join-item w-full" placeholder="exa-..."/>
+            <button type="button" class="btn join-item" onclick="const i=document.getElementById('exa_input');i.type=i.type==='password'?'text':'password'">👁</button>
+            <button type="button" class="btn join-item" onclick="navigator.clipboard.writeText(document.getElementById('exa_input').value);this.textContent='✓';setTimeout(()=>this.textContent='📋',1000)">📋</button>
+          </div>
+          <div class="label"><span class="label-text-alt text-base-content/50">Tavily 失败时的备选</span></div>
+        </label>
+        <div class="pt-2">
+          <button type="submit" class="btn btn-primary w-full">保存 API 配置</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="card bg-base-100 shadow">
     <div class="card-body gap-0">
       <h2 class="card-title text-lg mb-4">修改密码</h2>

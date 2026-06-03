@@ -1,53 +1,26 @@
 /**
- * Clean Service — convert raw HTML to Markdown using Turndown.
- * Used for articles without code blocks (lightweight, runs in Worker).
+ * Clean Service — convert raw HTML to Markdown using node-html-markdown.
+ * (Pure string parsing, no DOM dependency, fully Workers-compatible.)
  */
 
-import TurndownService from "turndown";
+import { NodeHtmlMarkdown } from "node-html-markdown";
 import { ArticleRepository } from "../repositories/article-repository.js";
 import { FileRepository } from "../repositories/file-repository.js";
 import { ARTICLE_STATUS } from "../lib/constants.js";
 import type { Logger } from "../lib/log.js";
 
+const nhm = new NodeHtmlMarkdown({
+  bulletMarker: "-",
+  codeBlockStyle: "fenced",
+});
+
 export class CleanService {
   private articleRepo: ArticleRepository;
   private fileRepo: FileRepository;
-  private turndown: TurndownService;
 
   constructor(env: Env, private log: Logger) {
     this.articleRepo = new ArticleRepository(env.DB);
     this.fileRepo = new FileRepository(env.R2);
-    this.turndown = new TurndownService({
-      headingStyle: "atx",
-      codeBlockStyle: "fenced",
-      bulletListMarker: "-",
-    });
-
-    // Fix image lazy-load (data-src → src)
-    this.turndown.addRule("lazyImages", {
-      filter: (node: any) => node.nodeName === "IMG" && !!node.getAttribute("data-src"),
-      replacement: (_content: string, node: any) => {
-        const src = node.getAttribute("data-src") ?? "";
-        const alt = node.getAttribute("alt") ?? "";
-        return src ? `![${alt}](${src})` : "";
-      },
-    });
-
-    // Fix WeChat code blocks: <pre> with nested spans → fenced code block
-    this.turndown.addRule("weixinCodeBlock", {
-      filter: (node: any) => node.nodeName === "PRE",
-      replacement: (_content: string, node: any) => {
-        const text = node.textContent ?? "";
-        return `\n\`\`\`\n${text.trim()}\n\`\`\`\n`;
-      },
-    });
-
-    // Remove empty links and spans
-    this.turndown.addRule("cleanEmpty", {
-      filter: (node: any) =>
-        (node.nodeName === "SPAN" || node.nodeName === "A") && !node.textContent?.trim(),
-      replacement: () => "",
-    });
   }
 
   /** Clean a single article: read raw HTML from R2, convert to Markdown, store back. */
@@ -61,8 +34,10 @@ export class CleanService {
 
     this.log.info("clean_start", { articleId });
 
-    // Convert HTML to Markdown
-    const markdown = this.turndown.turndown(rawHtml);
+    // Fix WeChat lazy-load images before conversion
+    const fixedHtml = rawHtml.replace(/(<img[^>]*?)data-src="([^"]+)"/g, '$1src="$2"');
+
+    const markdown = nhm.translate(fixedHtml);
 
     // Store cleaned markdown
     const r2MdKey = await this.fileRepo.putMarkdown(articleId, markdown);

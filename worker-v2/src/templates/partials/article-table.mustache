@@ -3,6 +3,14 @@
   <div class="stat"><div class="stat-title">已清洗</div><div class="stat-value text-success">{{cleanedCount}}</div></div>
   <div class="stat"><div class="stat-title">已发布</div><div class="stat-value text-accent">{{publishedCount}}</div></div>
 </div>
+{{#hasTags}}
+<div class="flex flex-wrap gap-2 mb-4">
+  <a href="/" class="btn btn-sm {{^activeTag}}btn-primary{{/activeTag}}{{#activeTag}}btn-ghost{{/activeTag}}">全部</a>
+  {{#tags}}
+  <a href="/?tag={{name}}" class="btn btn-sm {{#active}}btn-primary{{/active}}{{^active}}btn-ghost{{/active}}">{{name}}</a>
+  {{/tags}}
+</div>
+{{/hasTags}}
 <div class="overflow-x-auto bg-base-100 rounded-box shadow">
   <table class="table table-sm">
     <thead><tr><th>标题</th><th>来源</th><th>状态</th><th>时间</th><th>操作</th></tr></thead>

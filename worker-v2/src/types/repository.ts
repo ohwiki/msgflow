@@ -7,6 +7,7 @@ import type { Article } from "./index.js";
 export interface ListOptions {
   status?: string;
   source?: string;
+  tag?: string;
   limit?: number;
   offset?: number;
 }

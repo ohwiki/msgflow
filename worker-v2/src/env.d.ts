@@ -34,27 +34,12 @@ interface Env {
   // GitHub Actions trigger
   GITHUB_TOKEN?: string;
   GITHUB_REPO?: string;        // "owner/repo" for triggering workflows
+  // Third-party extract APIs (weixin fallback)
+  TAVILY_API_KEY?: string;
+  EXA_API_KEY?: string;
 }
 
 declare module "*.mustache" {
   const content: string;
   export default content;
-}
-
-declare module "turndown" {
-  interface Options {
-    headingStyle?: "setext" | "atx";
-    codeBlockStyle?: "indented" | "fenced";
-    bulletListMarker?: "-" | "+" | "*";
-  }
-  interface Rule {
-    filter: string | string[] | ((node: any) => boolean);
-    replacement: (content: string, node: any) => string;
-  }
-  class TurndownService {
-    constructor(options?: Options);
-    turndown(html: string): string;
-    addRule(key: string, rule: Rule): this;
-  }
-  export default TurndownService;
 }

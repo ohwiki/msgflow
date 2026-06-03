@@ -37,8 +37,8 @@ ${content}`;
       headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }] }),
     });
-  } catch (e: any) {
-    throw new AppError(`Translation API network error: ${e.message}`, "TRANSLATE_NETWORK_ERROR", 502);
+  } catch (e: unknown) {
+    throw new AppError(`Translation API network error: ${e instanceof Error ? e.message : "unknown"}`, "TRANSLATE_NETWORK_ERROR", 502);
   }
 
   if (!resp.ok) {
@@ -129,8 +129,8 @@ async function publishToNote(title: string, bodyHtml: string, cookie: string): P
       headers,
       body: JSON.stringify({ template_key: null }),
     });
-  } catch (e: any) {
-    throw new AppError(`note.com network error: ${e.message}`, "NOTE_NETWORK_ERROR", 502);
+  } catch (e: unknown) {
+    throw new AppError(`note.com network error: ${e instanceof Error ? e.message : "unknown"}`, "NOTE_NETWORK_ERROR", 502);
   }
 
   if (createResp.status !== 201) {
@@ -157,8 +157,8 @@ async function publishToNote(title: string, bodyHtml: string, cookie: string): P
         image_keys: [],
       }),
     });
-  } catch (e: any) {
-    throw new AppError(`note.com save network error: ${e.message}`, "NOTE_NETWORK_ERROR", 502);
+  } catch (e: unknown) {
+    throw new AppError(`note.com save network error: ${e instanceof Error ? e.message : "unknown"}`, "NOTE_NETWORK_ERROR", 502);
   }
 
   if (saveResp.status !== 200 && saveResp.status !== 201) {

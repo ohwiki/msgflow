@@ -21,12 +21,16 @@ const baseVars = {
 };
 
 export async function pageHome(request: Request, env: Env, _log: Logger): Promise<Response> {
+  const url = new URL(request.url);
+  const activeTag = url.searchParams.get("tag") || "";
+
   const repo = new ArticleRepository(env.DB);
-  const [articles, total, cleanedCount, publishedCount] = await Promise.all([
-    repo.list({ limit: 50 }),
+  const [articles, total, cleanedCount, publishedCount, allTags] = await Promise.all([
+    repo.list({ limit: 50, tag: activeTag || undefined }),
     repo.count(),
     repo.count({ status: ARTICLE_STATUS.CLEANED }),
     repo.count({ status: ARTICLE_STATUS.PUBLISHED }),
+    repo.getAllTags(),
   ]);
 
   const data = {
@@ -40,6 +44,9 @@ export async function pageHome(request: Request, env: Env, _log: Logger): Promis
     total,
     cleanedCount,
     publishedCount,
+    tags: allTags.map((t) => ({ name: t, active: t === activeTag })),
+    activeTag,
+    hasTags: allTags.length > 0,
   };
 
   const content = Mustache.render(articleTableTpl, data);
@@ -47,8 +54,10 @@ export async function pageHome(request: Request, env: Env, _log: Logger): Promis
   return Res.html(html);
 }
 
-export async function pageFetch(_request: Request, _env: Env, _log: Logger): Promise<Response> {
-  const content = Mustache.render(fetchFormTpl, {});
+export async function pageFetch(_request: Request, env: Env, _log: Logger): Promise<Response> {
+  const repo = new ArticleRepository(env.DB);
+  const allTags = await repo.getAllTags();
+  const content = Mustache.render(fetchFormTpl, { tags: allTags.map((t) => ({ name: t })) });
   const html = Mustache.render(layoutTpl, { ...baseVars, title: "抓取文章", content });
   return Res.html(html);
 }

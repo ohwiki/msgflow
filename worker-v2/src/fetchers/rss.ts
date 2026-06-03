@@ -6,6 +6,7 @@ import type { Fetcher, FetchResult } from "../types/fetcher.js";
 import { fetchWithTimeout } from "../lib/http.js";
 import { FetchError } from "../lib/errors.js";
 import { URL_PATTERN, EXTERNAL_URL, DEFAULTS } from "../lib/constants.js";
+import type { Logger } from "../lib/log.js";
 
 export interface RssItem {
   title: string;
@@ -20,7 +21,7 @@ export const rssFetcher: Fetcher = {
       URL_PATTERN.RSS_PATH.some((p) => url.includes(p));
   },
 
-  async fetch(url: string): Promise<FetchResult> {
+  async fetch(url: string, _env: Env, _log: Logger): Promise<FetchResult> {
     const resp = await fetchWithTimeout(url);
     if (!resp.ok) throw new FetchError(url, `HTTP ${resp.status}`);
     const xml = await resp.text();

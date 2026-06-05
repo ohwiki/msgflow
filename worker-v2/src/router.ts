@@ -22,6 +22,7 @@ import { apiShorten, handleShortRedirect } from "./handlers/short-url.js";
 import { pageArticlePreview } from "./handlers/article-preview.js";
 import { apiNotePublish, apiNoteUpdateCookie } from "./handlers/api-note.js";
 import { pageHome, pageFetch, pageNote } from "./views/admin.js";
+import { pageDomain, apiDomainCheck } from "./handlers/domain-check.js";
 
 type RouteHandler = (request: Request, env: Env, log: Logger) => Promise<Response>;
 
@@ -59,6 +60,8 @@ const adminRoutes: Route[] = [
   { method: "GET", path: "/api/feishu/token-status", handler: apiFeishuTokenStatus },
   { method: "POST", path: "/api/note/publish", handler: apiNotePublish },
   { method: "POST", path: "/api/note/cookie", handler: apiNoteUpdateCookie },
+  { method: "GET", path: "/domain", handler: pageDomain },
+  { method: "POST", path: "/api/domain/check", handler: apiDomainCheck },
 ];
 
 // Public reader routes (read.xxx.com, no auth)
@@ -92,6 +95,7 @@ export async function router(
     if (route) return route.handler(request, env, log);
     if (method === "GET" && path.startsWith("/resize/")) return handleImageResize(request, env, log);
     if (method === "GET" && path.match(/^\/article\/[^/]+$/)) return apiArticleDetail(request, env, log);
+    if (method === "GET" && path.match(/^\/article\/[^/]+\/preview$/)) return pageArticlePreview(request, env, log);
     return Res.notFound();
   }
 

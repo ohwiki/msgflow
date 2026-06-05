@@ -1,6 +1,7 @@
 name = "msgflow-v2"
 main = "src/index.ts"
 compatibility_date = "2025-05-20"
+compatibility_flags = ["nodejs_compat"]
 
 rules = [
   { type = "Text", globs = ["**/*.mustache"] }

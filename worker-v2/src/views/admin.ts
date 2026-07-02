@@ -5,7 +5,7 @@
 import Mustache from "mustache";
 import { Res } from "../lib/response.js";
 import { ArticleRepository } from "../repositories/article-repository.js";
-import { ARTICLE_STATUS, CDN } from "../lib/constants.js";
+import { ARTICLE_STATUS, CDN, BASE_TEMPLATE_VARS } from "../lib/constants.js";
 import type { Logger } from "../lib/log.js";
 import layoutTpl from "../templates/layout.mustache";
 import fetchFormTpl from "../templates/partials/fetch-form.mustache";
@@ -13,12 +13,7 @@ import articleTableTpl from "../templates/partials/article-table.mustache";
 import noteFormTpl from "../templates/partials/note-form.mustache";
 
 /** Shared template variables (CDN URLs etc.) */
-const baseVars = {
-  cdnDaisyui: CDN.DAISYUI_CSS,
-  cdnDaisyuiThemes: CDN.DAISYUI_THEMES,
-  cdnTailwind: CDN.TAILWIND_BROWSER,
-  cdnHtmx: CDN.HTMX,
-};
+const baseVars = BASE_TEMPLATE_VARS;
 
 export async function pageHome(request: Request, env: Env, _log: Logger): Promise<Response> {
   const url = new URL(request.url);

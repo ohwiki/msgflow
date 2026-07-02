@@ -100,3 +100,11 @@ export function detectSourceType(url: string): string {
 export function urlMatches(url: string, patterns: readonly string[]): boolean {
   return patterns.some((p) => url.includes(p));
 }
+
+// ─── Mustache Template Shared Variables ─────────────────
+export const BASE_TEMPLATE_VARS = {
+  cdnDaisyui: CDN.DAISYUI_CSS,
+  cdnDaisyuiThemes: CDN.DAISYUI_THEMES,
+  cdnTailwind: CDN.TAILWIND_BROWSER,
+  cdnHtmx: CDN.HTMX,
+} as const;

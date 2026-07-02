@@ -4,7 +4,7 @@
 
 import Mustache from "mustache";
 import { Res } from "../lib/response.js";
-import { CDN } from "../lib/constants.js";
+import { CDN, BASE_TEMPLATE_VARS } from "../lib/constants.js";
 import { AuthService } from "../services/auth-service.js";
 import { ConfigRepository } from "../repositories/config-repository.js";
 import { parseKeysText, entriesToText } from "../services/quota-service.js";
@@ -12,12 +12,7 @@ import type { Logger } from "../lib/log.js";
 import layoutTpl from "../templates/layout.mustache";
 import settingsTpl from "../templates/partials/settings.mustache";
 
-const baseVars = {
-  cdnDaisyui: CDN.DAISYUI_CSS,
-  cdnDaisyuiThemes: CDN.DAISYUI_THEMES,
-  cdnTailwind: CDN.TAILWIND_BROWSER,
-  cdnHtmx: CDN.HTMX,
-};
+const baseVars = BASE_TEMPLATE_VARS;
 
 export async function pageSettings(_request: Request, env: Env, _log: Logger): Promise<Response> {
   const github_token = await env.KV.get("github_token") || "";

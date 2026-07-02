@@ -38,11 +38,3 @@ export interface AuthConfig {
   oauth_client_id?: string;
   oauth_client_secret?: string;
 }
-
-export type RouteHandler = (request: Request, env: Env) => Promise<Response>;
-
-export interface Route {
-  method: string;
-  path: string;
-  handler: RouteHandler;
-}

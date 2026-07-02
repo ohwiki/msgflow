@@ -4,16 +4,12 @@
 
 import Mustache from "mustache";
 import { Res } from "../lib/response.js";
-import { CDN, HTTP_STATUS } from "../lib/constants.js";
+import { CDN, HTTP_STATUS, BASE_TEMPLATE_VARS } from "../lib/constants.js";
 import { AuthService, sessionCookie, clearSessionCookie, getSessionToken } from "../services/auth-service.js";
 import type { Logger } from "../lib/log.js";
 import loginTpl from "../templates/login.mustache";
 
-const baseVars = {
-  cdnDaisyui: CDN.DAISYUI_CSS,
-  cdnDaisyuiThemes: CDN.DAISYUI_THEMES,
-  cdnTailwind: CDN.TAILWIND_BROWSER,
-};
+const baseVars = BASE_TEMPLATE_VARS;
 
 export async function handleLoginPage(_request: Request, _env: Env, _log: Logger): Promise<Response> {
   const html = Mustache.render(loginTpl, { ...baseVars });

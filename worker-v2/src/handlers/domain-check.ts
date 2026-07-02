@@ -4,16 +4,11 @@
 
 import Mustache from "mustache";
 import { Res } from "../lib/response.js";
-import { CDN } from "../lib/constants.js";
+import { CDN, BASE_TEMPLATE_VARS } from "../lib/constants.js";
 import type { Logger } from "../lib/log.js";
 import layoutTpl from "../templates/layout.mustache";
 
-const baseVars = {
-  cdnDaisyui: CDN.DAISYUI_CSS,
-  cdnDaisyuiThemes: CDN.DAISYUI_THEMES,
-  cdnTailwind: CDN.TAILWIND_BROWSER,
-  cdnHtmx: CDN.HTMX,
-};
+const baseVars = BASE_TEMPLATE_VARS;
 
 const PAGE_TPL = `
 <div class="card bg-base-100 shadow">

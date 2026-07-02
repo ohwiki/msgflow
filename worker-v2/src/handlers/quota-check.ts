@@ -10,7 +10,7 @@
 
 import Mustache from "mustache";
 import { Res } from "../lib/response.js";
-import { CDN } from "../lib/constants.js";
+import { CDN, BASE_TEMPLATE_VARS } from "../lib/constants.js";
 import type { Logger } from "../lib/log.js";
 import type { QuotaKeyEntry } from "../types/quota.js";
 import { QuotaService, EasyClaudeClient, toCardViewModels } from "../services/quota-service.js";
@@ -20,12 +20,7 @@ import quotaCardsTpl from "../templates/partials/quota-cards.mustache";
 
 const KV_KEY_EASYCLAUDE = "easyclaude_keys";
 
-const baseVars = {
-  cdnDaisyui: CDN.DAISYUI_CSS,
-  cdnDaisyuiThemes: CDN.DAISYUI_THEMES,
-  cdnTailwind: CDN.TAILWIND_BROWSER,
-  cdnHtmx: CDN.HTMX,
-};
+const baseVars = BASE_TEMPLATE_VARS;
 
 // ─── Page ───────────────────────────────────────────────
 

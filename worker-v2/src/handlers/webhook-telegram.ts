@@ -6,6 +6,7 @@
 
 import { Res } from "../lib/response.js";
 import { HTTP_STATUS, EXTERNAL_URL } from "../lib/constants.js";
+import { fetchWithTimeout } from "../lib/http.js";
 import { parseCommand, HELP_TEXT } from "../lib/command.js";
 import { checkRateLimit } from "../lib/rate-limit.js";
 import { FetchService } from "../services/fetch-service.js";
@@ -71,7 +72,7 @@ async function sendTelegram(env: Env, chatId: number, text: string): Promise<voi
 
   // Telegram 消息限制 4096 字符
   for (let i = 0; i < text.length; i += 4096) {
-    await fetch(`${EXTERNAL_URL.TELEGRAM_API}/bot${token}/sendMessage`, {
+    await fetchWithTimeout(`${EXTERNAL_URL.TELEGRAM_API}/bot${token}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ chat_id: chatId, text: text.substring(i, i + 4096) }),

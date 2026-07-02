@@ -7,6 +7,7 @@ import { createLogger } from "./lib/log.js";
 import { AppError } from "./lib/errors.js";
 import { Res } from "./lib/response.js";
 import { HTTP_STATUS } from "./lib/constants.js";
+import { fetchWithTimeout } from "./lib/http.js";
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -63,7 +64,7 @@ async function refreshFeishuToken(env: Env): Promise<void> {
     }
 
     log.info("feishu_token_refreshing");
-    const appResp = await fetch("https://open.feishu.cn/open-apis/auth/v3/app_access_token/internal", {
+    const appResp = await fetchWithTimeout("https://open.feishu.cn/open-apis/auth/v3/app_access_token/internal", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ app_id: env.FEISHU_APP_ID, app_secret: env.FEISHU_APP_SECRET }),
@@ -72,7 +73,7 @@ async function refreshFeishuToken(env: Env): Promise<void> {
     const appToken = appData?.app_access_token;
     if (!appToken) { log.error("feishu_app_token_failed"); return; }
 
-    const refreshResp = await fetch("https://open.feishu.cn/open-apis/authen/v1/oidc/refresh_access_token", {
+    const refreshResp = await fetchWithTimeout("https://open.feishu.cn/open-apis/authen/v1/oidc/refresh_access_token", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${appToken}` },
       body: JSON.stringify({ grant_type: "refresh_token", refresh_token: tokenData.refresh_token }),

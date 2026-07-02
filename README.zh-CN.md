@@ -46,14 +46,14 @@ flowchart LR
 
 | 方式 | 适合谁 | 时间 |
 |------|--------|------|
-| 🤖 [让 AI 帮你部署](docs/admin-setup-guide.md#版本二给-ai-助手执行的操作指令) | 有 AI 助手（Kiro、Claude、ChatGPT 等） | ~3 分钟 |
-| 🛠️ [手动部署](docs/deploy.md) | 喜欢自己动手，或想了解细节 | ~15 分钟 |
+| 🤖 [让 AI 帮你部署](docs/deploy/admin-setup-guide.md#版本二给-ai-助手执行的操作指令) | 有 AI 助手（Kiro、Claude、ChatGPT 等） | ~3 分钟 |
+| 🛠️ [手动部署](docs/deploy/deploy.md) | 喜欢自己动手，或想了解细节 | ~15 分钟 |
 
 ### AI 部署（推荐）
 
 把下面这段话发给你的 AI 助手：
 
-> 帮我部署 msgflow。仓库已克隆到 `你的路径/msgflow`，Worker 域名用 `你的域名`，ADMIN_TOKEN 用 `你想要的密码`。请按照 docs/admin-setup-guide.md 的指令执行。
+> 帮我部署 msgflow。仓库已克隆到 `你的路径/msgflow`，Worker 域名用 `你的域名`，ADMIN_TOKEN 用 `你想要的密码`。请按照 docs/deploy/admin-setup-guide.md 的指令执行。
 
 AI 会自动完成 KV 创建、Secret 设置、部署和验证。
 
@@ -76,9 +76,9 @@ wrangler deploy
 https://你的域名/admin?token=你的ADMIN_TOKEN
 ```
 
-> 不知道怎么填？查看 [配置项获取指南](docs/admin-config-guide.md)
+> 不知道怎么填？查看 [配置项获取指南](docs/deploy/admin-config-guide.md)
 
-完整步骤见 [部署指南](docs/deploy.md)。
+完整步骤见 [部署指南](docs/deploy/deploy.md)。
 
 ## 项目结构
 
@@ -142,15 +142,15 @@ flowchart LR
 
 | 文档 | 说明 |
 |------|------|
-| [部署指南](docs/deploy.md) | 完整的从零部署教程 |
-| [Telegram 接入](docs/channel-telegram.md) | Telegram Bot 创建和配置 |
-| [飞书接入](docs/channel-feishu.md) | 飞书应用创建和事件订阅 |
-| [飞书文档抓取](docs/feishu-doc-fetch.md) | 配置飞书 API 高质量抓取文档 |
-| [企业微信接入](docs/channel-wecom.md) | 企业微信自建应用配置 |
-| [配置项获取指南](docs/admin-config-guide.md) | 每个配置项如何获取（小白友好） |
-| [Admin 部署操作](docs/admin-setup-guide.md) | 管理页面部署步骤（含 AI 可执行版） |
-| [Worker 架构](docs/worker-architecture.md) | Worker 模块化设计和扩展规划 |
-| [Admin 面板设计](docs/admin-panel-design.md) | 管理页面需求和技术设计 |
+| [部署指南](docs/deploy/deploy.md) | 完整的从零部署教程 |
+| [Telegram 接入](docs/channels/channel-telegram.md) | Telegram Bot 创建和配置 |
+| [飞书接入](docs/channels/channel-feishu.md) | 飞书应用创建和事件订阅 |
+| [飞书文档抓取](docs/features/feishu-doc-fetch.md) | 配置飞书 API 高质量抓取文档 |
+| [企业微信接入](docs/channels/channel-wecom.md) | 企业微信自建应用配置 |
+| [配置项获取指南](docs/deploy/admin-config-guide.md) | 每个配置项如何获取（小白友好） |
+| [Admin 部署操作](docs/deploy/admin-setup-guide.md) | 管理页面部署步骤（含 AI 可执行版） |
+| [Worker 架构](docs/architecture/worker-architecture.md) | Worker 模块化设计和扩展规划 |
+| [技术决策](docs/architecture/architecture-decisions.md) | 技术选型、存储设计、关键决策 |
 
 ## 费用
 

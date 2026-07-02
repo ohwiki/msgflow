@@ -50,14 +50,14 @@ Two deployment options:
 
 | Method | For | Time |
 |--------|-----|------|
-| 🤖 [AI-assisted deploy](docs/admin-setup-guide.md) | Users with an AI assistant (Kiro, Claude, ChatGPT, etc.) | ~3 min |
-| 🛠️ [Manual deploy](docs/deploy.md) | Hands-on users who want full control | ~15 min |
+| 🤖 [AI-assisted deploy](docs/deploy/admin-setup-guide.md) | Users with an AI assistant (Kiro, Claude, ChatGPT, etc.) | ~3 min |
+| 🛠️ [Manual deploy](docs/deploy/deploy.md) | Hands-on users who want full control | ~15 min |
 
 ### AI Deployment (Recommended)
 
 Send this to your AI assistant:
 
-> Deploy msgflow for me. The repo is cloned at `your/path/msgflow`, Worker domain is `your-domain`, ADMIN_TOKEN is `your-password`. Follow docs/admin-setup-guide.md.
+> Deploy msgflow for me. The repo is cloned at `your/path/msgflow`, Worker domain is `your-domain`, ADMIN_TOKEN is `your-password`. Follow docs/deploy/admin-setup-guide.md.
 
 The AI will automatically handle KV creation, secret setup, deployment, and verification.
 
@@ -80,9 +80,9 @@ After deployment, open the admin panel to configure AI parameters:
 https://your-domain/admin?token=your-ADMIN_TOKEN
 ```
 
-> Need help with config values? See the [Configuration Guide](docs/admin-config-guide.md)
+> Need help with config values? See the [Configuration Guide](docs/deploy/admin-config-guide.md)
 
-Full steps in the [Deployment Guide](docs/deploy.md).
+Full steps in the [Deployment Guide](docs/deploy/deploy.md).
 
 ## Project Structure
 
@@ -146,15 +146,15 @@ See [llmwiki-template README](https://github.com/ohwiki/llmwiki-template) for de
 
 | Document | Description |
 |----------|-------------|
-| [Deployment Guide](docs/deploy.md) | Complete zero-to-deploy tutorial |
-| [Telegram Setup](docs/channel-telegram.md) | Telegram Bot creation and configuration |
-| [Feishu Setup](docs/channel-feishu.md) | Feishu app creation and event subscription |
-| [Feishu Doc Fetching](docs/feishu-doc-fetch.md) | Configure Feishu API for high-quality doc fetching |
-| [WeCom Setup](docs/channel-wecom.md) | WeCom custom app configuration |
-| [Config Guide](docs/admin-config-guide.md) | How to obtain each config value (beginner-friendly) |
-| [Admin Setup](docs/admin-setup-guide.md) | Admin panel deployment steps (with AI-executable version) |
-| [Worker Architecture](docs/worker-architecture.md) | Worker modular design and extension plan |
-| [Admin Panel Design](docs/admin-panel-design.md) | Admin panel requirements and technical design |
+| [Deployment Guide](docs/deploy/deploy.md) | Complete zero-to-deploy tutorial |
+| [Telegram Setup](docs/channels/channel-telegram.md) | Telegram Bot creation and configuration |
+| [Feishu Setup](docs/channels/channel-feishu.md) | Feishu app creation and event subscription |
+| [Feishu Doc Fetching](docs/features/feishu-doc-fetch.md) | Configure Feishu API for high-quality doc fetching |
+| [WeCom Setup](docs/channels/channel-wecom.md) | WeCom custom app configuration |
+| [Config Guide](docs/deploy/admin-config-guide.md) | How to obtain each config value (beginner-friendly) |
+| [Admin Setup](docs/deploy/admin-setup-guide.md) | Admin panel deployment steps (with AI-executable version) |
+| [Worker Architecture](docs/architecture/worker-architecture.md) | Worker modular design and extension plan |
+| [Architecture Decisions](docs/architecture/architecture-decisions.md) | Tech stack choices, storage design, key decisions |
 
 ## Costs
 

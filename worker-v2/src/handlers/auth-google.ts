@@ -7,6 +7,7 @@
 
 import { Res } from "../lib/response.js";
 import { EXTERNAL_URL, HTTP_STATUS, DEFAULTS } from "../lib/constants.js";
+import { fetchWithTimeout } from "../lib/http.js";
 import { ConfigRepository } from "../repositories/config-repository.js";
 import { sessionCookie } from "../services/auth-service.js";
 import type { Logger } from "../lib/log.js";
@@ -47,7 +48,7 @@ export async function handleGoogleCallback(request: Request, env: Env, log: Logg
   const redirectUri = `${env.WORKER_URL}/auth/google/callback`;
 
   // Exchange code for token
-  const tokenResp = await fetch(GOOGLE_TOKEN_URL, {
+  const tokenResp = await fetchWithTimeout(GOOGLE_TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -67,7 +68,7 @@ export async function handleGoogleCallback(request: Request, env: Env, log: Logg
   const tokenData = await tokenResp.json() as { access_token: string };
 
   // Get user info
-  const userResp = await fetch(GOOGLE_USERINFO_URL, {
+  const userResp = await fetchWithTimeout(GOOGLE_USERINFO_URL, {
     headers: { Authorization: `Bearer ${tokenData.access_token}` },
   });
 

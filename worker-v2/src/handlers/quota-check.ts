@@ -99,9 +99,12 @@ function renderQuotaCards(results: QuotaResult[], entries: QuotaKeyEntry[]): str
           <div class="card-body gap-1 py-3 px-4">
             <div class="flex items-center justify-between">
               <span class="font-semibold">${label}</span>
-              <div class="flex items-center gap-1">
+              <div class="flex items-center gap-1.5">
                 <span class="text-sm opacity-50 font-mono">${masked}</span>
-                <button class="btn btn-ghost btn-xs" onclick="navigator.clipboard.writeText('${rawKey}');this.textContent='✓';setTimeout(()=>this.textContent='📋',800)" title="复制 Key">📋</button>
+                <button class="btn btn-outline btn-xs gap-1" onclick="navigator.clipboard.writeText(this.dataset.key);this.querySelector('span').textContent='已复制';setTimeout(()=>this.querySelector('span').textContent='复制',800)" data-key="${rawKey}" title="复制完整 Key">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                  <span>复制</span>
+                </button>
               </div>
             </div>
             <div class="text-error text-sm">${info}</div>
@@ -140,8 +143,11 @@ function renderQuotaCards(results: QuotaResult[], entries: QuotaKeyEntry[]): str
               <span class="font-bold text-base truncate">${label}</span>
               <span class="text-sm opacity-50 font-mono ml-2">${masked}</span>
             </div>
-            <div class="flex items-center gap-1">
-              <button class="btn btn-ghost btn-xs" onclick="navigator.clipboard.writeText('${rawKey}');this.textContent='✓';setTimeout(()=>this.textContent='📋',800)" title="复制 Key">📋</button>
+            <div class="flex items-center gap-1.5">
+              <button class="btn btn-outline btn-xs gap-1" onclick="navigator.clipboard.writeText(this.dataset.key);this.querySelector('span').textContent='已复制';setTimeout(()=>this.querySelector('span').textContent='复制',800)" data-key="${rawKey}" title="复制完整 Key">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                <span>复制</span>
+              </button>
               <span class="badge ${statusOk ? "badge-success" : "badge-error"} badge-sm shrink-0">
                 ${statusOk ? "正常" : "停用"}
               </span>

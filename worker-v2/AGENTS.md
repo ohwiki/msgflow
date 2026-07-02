@@ -8,13 +8,14 @@
 src/
 ├── index.ts          ← 入口：只做 fetch/scheduled 分发 + 全局错误处理
 ├── router.ts         ← 纯路由表：无业务逻辑，只做 path → handler 映射
-├── handlers/         ← 薄层：参数校验 + 调 service，不直接操作存储
-├── services/         ← 业务逻辑：编排 repository 和 fetcher
+├── handlers/         ← 薄层：参数校验 + 调 service + Mustache.render，不含业务逻辑
+├── services/         ← 业务逻辑：编排 repository/fetcher + view model 转换
 ├── fetchers/         ← 外部数据获取：每个来源一个文件，实现 Fetcher 接口
 ├── repositories/     ← 数据访问：实现 IXxxRepository 接口，封装 D1/R2/KV
-├── lib/              ← 工具函数：无业务逻辑，纯工具
-├── types/            ← 类型定义：接口、DTO、常量类型
-├── views/            ← 视图渲染：Mustache 模板 + 数据组装
+├── lib/              ← 工具函数：无业务逻辑，纯工具（http、log、errors、constants）
+├── types/            ← 类型定义：接口、DTO、view model 类型
+├── templates/        ← Mustache 模板：layout + partials（页面 + HTMX 片段）
+├── views/            ← 视图数据组装（需 DB 查询的页面，如文章列表）
 └── islands/          ← 客户端 JS：按需加载的交互逻辑
 ```
 
@@ -79,6 +80,30 @@ export interface IFileRepository { ... }
 
 Service 层通过接口引用 Repository，不直接依赖具体实现类。
 
+### 外部服务接口
+
+调用第三方 API 的 Client 必须抽接口，便于 mock 和替换：
+
+```typescript
+// types/quota.ts
+export interface IQuotaClient {
+  query(apiKey: string): Promise<QuotaKeyInfo>;
+}
+
+// services/quota-service.ts
+export class EasyClaudeClient implements IQuotaClient { ... }
+
+// Service 通过构造函数注入 Client
+export class QuotaService {
+  constructor(private client: IQuotaClient, private log: Logger) {}
+}
+```
+
+新增外部服务时：
+1. 在 `types/` 定义 `IXxxClient` 接口
+2. 在 `services/` 实现具体 Client 类
+3. Service 通过构造函数接收接口，不依赖具体实现
+
 ## TypeScript 规范
 
 - **strict 模式**：`tsconfig.json` 已开启 strict + noUncheckedIndexedAccess
@@ -130,9 +155,12 @@ Service 层通过接口引用 Repository，不直接依赖具体实现类。
 
 ## HTTP 请求规范
 
-- **所有外部 fetch 必须使用 `lib/http.ts` 的 `fetchWithTimeout`**
-- 默认超时 15 秒，可通过 `timeoutMs` 参数覆盖
+- **所有外部 fetch 必须有超时保护**，两种方式：
+  1. `lib/http.ts` 的 `fetchWithTimeout(url, { timeoutMs })` — 用于 fetcher/service
+  2. `AbortSignal.timeout(ms)` — 用于简单的一次性请求
+- 默认超时 15 秒（`DEFAULTS.FETCH_TIMEOUT_MS`）
 - 禁止裸调 `fetch()`（无超时保护会卡死 Worker）
+- Client 类中的 fetch 必须处理非 2xx 状态码，转为领域异常
 
 ## Worker 最佳实践
 
@@ -144,11 +172,65 @@ Service 层通过接口引用 Repository，不直接依赖具体实现类。
 
 ## daisyUI / 前端规范
 
-- **CDN 引入**：不本地打包 CSS，用 CDN 版本
+- **CDN 引入**：不本地打包 CSS，用 CDN 版本（`lib/constants.ts` → `CDN`）
 - **语义化 class**：优先用 daisyUI 组件类（`btn`、`card`、`table`），不写裸 Tailwind
 - **HTMX 交互**：用 `hx-post`/`hx-get` 声明式交互，不写 fetch JS
 - **Islands 架构**：需要客户端 JS 时，写独立小文件放 `islands/`，按需加载
-- **模板内联**：Mustache 模板作为字符串常量写在 `views/*.ts` 中（esbuild 不支持 .mustache loader）
+
+## Mustache 模板规范
+
+### 文件组织
+
+```
+templates/
+├── layout.mustache              ← 全局布局（侧边栏 + 内容区）
+└── partials/
+    ├── quota.mustache           ← 页面骨架（固定结构 + HTMX 触发器）
+    ├── quota-cards.mustache     ← HTMX 动态片段（卡片列表）
+    ├── settings.mustache        ← 设置页面
+    └── ...
+```
+
+### 编码原则
+
+1. **数据驱动，零逻辑**：模板只做展示，所有计算/格式化在 TS 中完成后传入 view model
+2. **用 `{{var}}` 自动转义**：Mustache 默认 HTML 转义，不需要手动 escapeHtml
+3. **用 `{{{var}}}` 仅当确认安全**：如已经是 HTML 的内联 SVG
+4. **条件用 section**：`{{#flag}}...{{/flag}}` / `{{^flag}}...{{/flag}}`，不做复杂逻辑
+5. **禁止在 TS 中拼接 HTML**：所有 HTML 必须在 `.mustache` 文件中，handler 只准备数据
+
+### View Model 模式
+
+Handler 负责将业务数据转换为 "view model"（扁平对象，所有值已格式化为字符串/布尔）：
+
+```typescript
+// ✗ 错误：在模板中做计算
+// {{#key_info}}{{remain_quota}} / {{total_quota}}{{/key_info}}
+
+// ✓ 正确：TS 中预计算，模板直接渲染
+const viewModel = {
+  remainFull: k.remain_quota.toFixed(2),
+  pctNum: Math.round(pct),
+  statusOk: k.status === 1,       // 布尔控制 section
+  daysWarning: days <= 5,         // 互斥条件
+  daysNormal: days > 5,
+};
+return Mustache.render(tpl, viewModel);
+```
+
+### HTMX 片段
+
+- 页面骨架（`quota.mustache`）包含 `hx-trigger="load"` 自动加载
+- API handler 返回 HTML 片段（`quota-cards.mustache`），由 HTMX swap 进目标容器
+- 片段模板是独立的，不依赖 layout
+
+### 参考实现
+
+`quota` 模块是 Mustache 模板模式的标准示例：
+- `handlers/quota-check.ts`：77 行，纯 HTTP 层
+- `services/quota-service.ts`：业务 + `toCardViewModels()` 视图模型转换
+- `templates/partials/quota.mustache`：页面骨架
+- `templates/partials/quota-cards.mustache`：HTMX 片段（数据驱动卡片）
 
 ## 测试规范
 
@@ -366,6 +448,15 @@ scripts/
 - [ ] 上层调度代码不改
 
 ## 新增功能 Checklist
+
+添加新的页面（带 HTMX 交互）：
+- [ ] 在 `types/` 定义类型和接口（如 `IXxxClient`）
+- [ ] 在 `services/` 创建 Service 类 + Client 类 + view model 转换函数
+- [ ] 在 `templates/partials/` 创建页面骨架模板 + HTMX 片段模板
+- [ ] 在 `handlers/` 创建 handler（只做请求解析 → 调 service → Mustache.render）
+- [ ] 在 `router.ts` 注册 GET（页面）+ POST（API）路由
+- [ ] 在 `templates/layout.mustache` 侧边栏加导航链接
+- [ ] TypeScript 编译通过 + 测试通过
 
 添加新的内容来源：
 - [ ] 在 `fetchers/` 创建文件，实现 `Fetcher` 接口

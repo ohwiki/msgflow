@@ -7,6 +7,7 @@ import { Res } from "../lib/response.js";
 import { CDN } from "../lib/constants.js";
 import { AuthService } from "../services/auth-service.js";
 import { ConfigRepository } from "../repositories/config-repository.js";
+import { parseKeysText, entriesToText } from "../services/quota-service.js";
 import type { Logger } from "../lib/log.js";
 import layoutTpl from "../templates/layout.mustache";
 import settingsTpl from "../templates/partials/settings.mustache";
@@ -23,11 +24,13 @@ export async function pageSettings(_request: Request, env: Env, _log: Logger): P
   const github_repo = await env.KV.get("github_repo") || "";
   const tavily_key = await env.KV.get("tavily_api_key") || "";
   const exa_key = await env.KV.get("exa_api_key") || "";
+  const easyclaude_keys_text = await getEasyClaudeKeysText(env);
   return renderSettings({
     github_token_masked: github_token ? "••••••••" : "",
     github_repo,
     tavily_key_value: tavily_key,
     exa_key_value: exa_key,
+    easyclaude_keys_text,
   });
 }
 
@@ -65,6 +68,14 @@ export async function handleSettingsSubmit(request: Request, env: Env, log: Logg
     return renderSettings({ success: "API 配置已保存", tavily_key_value: tavily_key, exa_key_value: exa_key });
   }
 
+  if (action === "save_easyclaude_keys") {
+    const keysText = ((formData.get("easyclaude_keys") as string) || "").trim();
+    const entries = parseKeysText(keysText);
+    await env.KV.put("easyclaude_keys", JSON.stringify(entries));
+    log.info("easyclaude_keys_saved", { count: String(entries.length) });
+    return renderSettings({ success: `EasyClaude Keys 已保存（${entries.length} 个）`, easyclaude_keys_text: keysText });
+  }
+
   if (action === "change_password") {
     const currentPassword = formData.get("current_password") as string ?? "";
     const newPassword = formData.get("new_password") as string ?? "";
@@ -97,8 +108,19 @@ export async function handleSettingsSubmit(request: Request, env: Env, log: Logg
   return renderSettings({});
 }
 
-function renderSettings(data: { success?: string; error?: string; github_token_masked?: string; github_repo?: string; tavily_key_value?: string; exa_key_value?: string }): Response {
+function renderSettings(data: { success?: string; error?: string; github_token_masked?: string; github_repo?: string; tavily_key_value?: string; exa_key_value?: string; easyclaude_keys_text?: string }): Response {
   const content = Mustache.render(settingsTpl, data);
   const html = Mustache.render(layoutTpl, { ...baseVars, title: "设置", content });
   return Res.html(html);
+}
+
+/** 从 KV 读 easyclaude_keys JSON，转回文本格式供编辑 */
+async function getEasyClaudeKeysText(env: Env): Promise<string> {
+  const raw = await env.KV.get("easyclaude_keys");
+  if (!raw) return "";
+  try {
+    return entriesToText(JSON.parse(raw));
+  } catch {
+    return "";
+  }
 }

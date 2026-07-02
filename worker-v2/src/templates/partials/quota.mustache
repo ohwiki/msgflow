@@ -1,0 +1,37 @@
+<div class="space-y-6">
+  <div class="card bg-base-100 shadow">
+    <div class="card-body">
+      <h2 class="card-title">💰 EasyClaude 额度查询</h2>
+      <p class="text-sm text-base-content/60">查询 easyclaude.com 中转 key 的剩余额度</p>
+
+      {{#hasKeys}}
+      <div class="mt-4">
+        <button class="btn btn-primary" hx-post="/api/quota/check" hx-vals='{"mode":"saved"}' hx-target="#quota-result" hx-indicator="#quota-loading">
+          🔄 查询已配置的 Key ({{keyCount}})
+        </button>
+      </div>
+      {{/hasKeys}}
+      {{^hasKeys}}
+      <div class="alert alert-info text-sm mt-4">
+        💡 尚未配置 key，请先在 <a href="/settings" class="link font-medium">设置页面</a> 添加 EasyClaude Keys，或使用下方手动查询。
+      </div>
+      {{/hasKeys}}
+
+      <div class="divider text-sm">手动查询</div>
+      <form hx-post="/api/quota/check" hx-target="#quota-result" hx-indicator="#quota-loading" class="flex gap-2">
+        <input type="hidden" name="mode" value="manual"/>
+        <input type="text" name="api_key" class="input input-bordered flex-1" placeholder="sk-xxxxxxxx"/>
+        <button type="submit" class="btn btn-outline">查询</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="quota-loading" class="htmx-indicator flex justify-center py-8">
+    <span class="loading loading-spinner loading-lg"></span>
+  </div>
+  <div id="quota-result" hx-swap="innerHTML">
+    {{#hasKeys}}
+    <div hx-post="/api/quota/check" hx-vals='{"mode":"saved"}' hx-target="#quota-result" hx-indicator="#quota-loading" hx-trigger="load"></div>
+    {{/hasKeys}}
+  </div>
+</div>

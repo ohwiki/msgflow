@@ -23,6 +23,7 @@ import { pageArticlePreview } from "./handlers/article-preview.js";
 import { apiNotePublish, apiNoteUpdateCookie } from "./handlers/api-note.js";
 import { pageHome, pageFetch, pageNote } from "./views/admin.js";
 import { pageDomain, apiDomainCheck } from "./handlers/domain-check.js";
+import { pageQuota, apiQuotaCheck } from "./handlers/quota-check.js";
 
 type RouteHandler = (request: Request, env: Env, log: Logger) => Promise<Response>;
 
@@ -62,6 +63,8 @@ const adminRoutes: Route[] = [
   { method: "POST", path: "/api/note/cookie", handler: apiNoteUpdateCookie },
   { method: "GET", path: "/domain", handler: pageDomain },
   { method: "POST", path: "/api/domain/check", handler: apiDomainCheck },
+  { method: "GET", path: "/quota", handler: pageQuota },
+  { method: "POST", path: "/api/quota/check", handler: apiQuotaCheck },
 ];
 
 // Public reader routes (read.xxx.com, no auth)

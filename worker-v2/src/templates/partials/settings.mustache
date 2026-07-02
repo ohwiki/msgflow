@@ -54,6 +54,23 @@
     </div>
   </div>
 
+  <div class="card bg-base-100 shadow mb-6">
+    <div class="card-body gap-0">
+      <h2 class="card-title text-lg mb-4">EasyClaude Keys</h2>
+      <form method="POST" action="/settings" class="space-y-4">
+        <input type="hidden" name="action" value="save_easyclaude_keys"/>
+        <label class="form-control w-full">
+          <div class="label"><span class="label-text font-medium">Key 配置</span></div>
+          <textarea name="easyclaude_keys" class="textarea textarea-bordered w-full h-32 font-mono text-sm" placeholder="每行一个，格式：标签 = sk-xxx&#10;主卡 = sk-aaaa...&#10;备用 = sk-bbbb...&#10;sk-cccc...（无标签时自动打码显示）">{{easyclaude_keys_text}}</textarea>
+          <div class="label"><span class="label-text-alt text-base-content/50"># 开头为注释，空行忽略。配置后在 <a href="/quota" class="link">额度查询</a> 页面自动加载</span></div>
+        </label>
+        <div class="pt-2">
+          <button type="submit" class="btn btn-primary w-full">保存 EasyClaude Keys</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <div class="card bg-base-100 shadow">
     <div class="card-body gap-0">
       <h2 class="card-title text-lg mb-4">修改密码</h2>

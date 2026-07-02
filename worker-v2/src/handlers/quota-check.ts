@@ -57,7 +57,7 @@ export async function apiQuotaCheck(request: Request, env: Env, log: Logger): Pr
   }
 
   const results = await service.queryAll(entries);
-  return Res.html(renderQuotaCards(results));
+  return Res.html(renderQuotaCards(results, entries));
 }
 
 // ─── KV Access ──────────────────────────────────────────
@@ -82,14 +82,15 @@ function escapeHtml(str: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function renderQuotaCards(results: QuotaResult[]): string {
+function renderQuotaCards(results: QuotaResult[], entries: QuotaKeyEntry[]): string {
   if (!results.length) {
     return `<div class="alert alert-warning">没有可查询的 key</div>`;
   }
 
-  const cards = results.map((r) => {
+  const cards = results.map((r, i) => {
     const label = escapeHtml(r.label);
     const masked = escapeHtml(r.masked);
+    const rawKey = escapeHtml(entries[i]?.key || "");
 
     if (!r.ok) {
       const info = escapeHtml(r.info || "查询失败");
@@ -98,7 +99,10 @@ function renderQuotaCards(results: QuotaResult[]): string {
           <div class="card-body gap-1 py-3 px-4">
             <div class="flex items-center justify-between">
               <span class="font-semibold">${label}</span>
-              <span class="text-xs opacity-50 font-mono">${masked}</span>
+              <div class="flex items-center gap-1">
+                <span class="text-sm opacity-50 font-mono">${masked}</span>
+                <button class="btn btn-ghost btn-xs" onclick="navigator.clipboard.writeText('${rawKey}');this.textContent='✓';setTimeout(()=>this.textContent='📋',800)" title="复制 Key">📋</button>
+              </div>
             </div>
             <div class="text-error text-sm">${info}</div>
           </div>
@@ -136,9 +140,12 @@ function renderQuotaCards(results: QuotaResult[]): string {
               <span class="font-bold text-base truncate">${label}</span>
               <span class="text-sm opacity-50 font-mono ml-2">${masked}</span>
             </div>
-            <span class="badge ${statusOk ? "badge-success" : "badge-error"} badge-sm shrink-0">
-              ${statusOk ? "正常" : "停用"}
-            </span>
+            <div class="flex items-center gap-1">
+              <button class="btn btn-ghost btn-xs" onclick="navigator.clipboard.writeText('${rawKey}');this.textContent='✓';setTimeout(()=>this.textContent='📋',800)" title="复制 Key">📋</button>
+              <span class="badge ${statusOk ? "badge-success" : "badge-error"} badge-sm shrink-0">
+                ${statusOk ? "正常" : "停用"}
+              </span>
+            </div>
           </div>
 
           <div class="flex items-center gap-4">

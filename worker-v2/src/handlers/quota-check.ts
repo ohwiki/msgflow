@@ -193,14 +193,14 @@ function renderTimeline(createdTime: string, expiredTime: string, daysLeft: numb
 
   const barColor = progressPct > 80 ? "#f87171" : progressPct > 60 ? "#fbbf24" : "#3b82f6";
 
-  // Full date format: M/D HH:mm
+  // Full date format: YYYY/M/D HH:mm:ss (保留完整精度)
   const fmtFull = (s: string) => {
     if (!s) return "—";
     const parts = s.split(" ");
     const d = (parts[0] || "").split("-");
-    const t = (parts[1] || "").slice(0, 5); // HH:mm
+    const t = parts[1] || "00:00:00";
     if (d.length !== 3) return escapeHtml(s);
-    return `${+(d[0] || 0)}/${+(d[1] || 0)}/${+(d[2] || 0)} ${t}`;
+    return `${d[0]}/${+(d[1] || 0)}/${+(d[2] || 0)} ${t}`;
   };
 
   // Countdown
@@ -212,16 +212,16 @@ function renderTimeline(createdTime: string, expiredTime: string, daysLeft: numb
 
   return `
     <div class="rounded-lg bg-base-200/60 px-3 py-2">
-      <div class="flex items-center justify-between mb-1">
+      <div class="flex items-center justify-between mb-1.5">
         <span class="text-sm opacity-70">服务周期</span>
         <div class="flex items-baseline gap-1 text-sm">${countdownHtml}</div>
       </div>
       <div class="relative h-2.5 rounded-full bg-base-300 overflow-hidden">
         <div class="absolute inset-y-0 left-0 rounded-full" style="width:${progressPct}%;background:${barColor};"></div>
       </div>
-      <div class="flex justify-between mt-1 text-sm opacity-60 font-mono">
-        <span>${fmtFull(createdTime)}</span>
-        <span>${fmtFull(expiredTime)}</span>
+      <div class="flex justify-between mt-1.5 text-sm font-mono">
+        <span class="opacity-60">${fmtFull(createdTime)}</span>
+        <span class="font-semibold">${fmtFull(expiredTime)}</span>
       </div>
     </div>`;
 }

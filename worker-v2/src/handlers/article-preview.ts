@@ -4,6 +4,7 @@
 
 import { marked } from "marked";
 import { Res } from "../lib/response.js";
+import { escapeHtml } from "../lib/http.js";
 import { ArticleRepository } from "../repositories/article-repository.js";
 import { FileRepository } from "../repositories/file-repository.js";
 import type { Logger } from "../lib/log.js";
@@ -35,7 +36,7 @@ export async function pageArticlePreview(request: Request, env: Env, log: Logger
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <meta name="referrer" content="no-referrer"/>
-  <title>${article.title}</title>
+  <title>${escapeHtml(article.title)}</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tailwindcss/typography@0.5.16/src/styles/base.min.css"/>
   <style>
     body { max-width: 48rem; margin: 2rem auto; padding: 0 1rem; font-family: system-ui, sans-serif; line-height: 1.8; }
@@ -51,8 +52,8 @@ export async function pageArticlePreview(request: Request, env: Env, log: Logger
 <body>
   <a class="back" href="/">← 返回列表</a>
   <article class="prose">
-    <h1>${article.title}</h1>
-    <div class="meta">${article.author || ""} · ${article.source_type} · ${article.fetched_at?.slice(0, 10) || ""}</div>
+    <h1>${escapeHtml(article.title)}</h1>
+    <div class="meta">${escapeHtml(article.author || "")} · ${escapeHtml(article.source_type)} · ${article.fetched_at?.slice(0, 10) || ""}</div>
     ${htmlContent}
   </article>
 </body>

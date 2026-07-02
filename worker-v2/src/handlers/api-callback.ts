@@ -35,7 +35,10 @@ export async function apiCallback(request: Request, env: Env, log: Logger): Prom
   const expectedSecret = env.CALLBACK_SECRET ?? "";
   const body = await request.json<CallbackPayload>();
 
-  if (expectedSecret && !timingSafeEqual(expectedSecret, body.secret ?? "")) {
+  if (!expectedSecret) {
+    throw new ValidationError("CALLBACK_SECRET not configured");
+  }
+  if (!timingSafeEqual(expectedSecret, body.secret ?? "")) {
     throw new ValidationError("Invalid callback secret");
   }
   if (!body.article_id || !body.markdown) {

@@ -5,6 +5,7 @@
 import { Res } from "../lib/response.js";
 import { ValidationError } from "../lib/errors.js";
 import { FetchService } from "../services/fetch-service.js";
+import { escapeHtml } from "../lib/http.js";
 import type { Logger } from "../lib/log.js";
 
 export async function apiFetch(request: Request, env: Env, log: Logger): Promise<Response> {
@@ -64,9 +65,9 @@ export async function apiFetch(request: Request, env: Env, log: Logger): Promise
     if (isHtmx) {
       return Res.html(`
         <div class="alert alert-success">
-          <span>✅ 抓取成功：<strong>${result.title}</strong></span>
-          <span class="badge badge-sm">${result.sourceType}</span>
-          <span class="badge badge-sm badge-outline">${result.status}</span>
+          <span>✅ 抓取成功：<strong>${escapeHtml(result.title)}</strong></span>
+          <span class="badge badge-sm">${escapeHtml(result.sourceType)}</span>
+          <span class="badge badge-sm badge-outline">${escapeHtml(result.status)}</span>
         </div>
       `);
     }
@@ -74,7 +75,7 @@ export async function apiFetch(request: Request, env: Env, log: Logger): Promise
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "unknown";
     log.error("fetch_error", { url: url || "", error: msg });
-    if (isHtmx) return Res.html(`<div class="alert alert-error">❌ 抓取失败：${msg}</div>`);
+    if (isHtmx) return Res.html(`<div class="alert alert-error">❌ 抓取失败：${escapeHtml(msg)}</div>`);
     throw e;
   }
 }

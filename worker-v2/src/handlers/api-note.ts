@@ -14,6 +14,7 @@
 
 import { Res } from "../lib/response.js";
 import { ValidationError, AppError } from "../lib/errors.js";
+import { escapeHtml } from "../lib/http.js";
 import type { Logger } from "../lib/log.js";
 
 const NOTE_API_BASE = "https://note.com/api/v1";
@@ -238,7 +239,7 @@ export async function apiNotePublish(request: Request, env: Env, log: Logger): P
 
   const isHtmx = request.headers.get("HX-Request") === "true";
   if (isHtmx) {
-    return Res.html(`<div class="alert alert-success"><span>✅ 下書き保存成功：<strong>${finalTitle}</strong></span><br><a href="${result.editUrl}" target="_blank" class="link">→ 編集画面を開く</a></div>`);
+    return Res.html(`<div class="alert alert-success"><span>✅ 下書き保存成功：<strong>${escapeHtml(finalTitle)}</strong></span><br><a href="${escapeHtml(result.editUrl)}" target="_blank" class="link">→ 編集画面を開く</a></div>`);
   }
   return Res.json({
     ok: true,

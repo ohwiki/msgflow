@@ -130,11 +130,11 @@ function renderQuotaCards(results: QuotaResult[]): string {
 
     return `
       <div class="card bg-base-100 shadow">
-        <div class="card-body gap-3 p-4">
-          <div class="flex items-start justify-between gap-2">
+        <div class="card-body gap-2 p-4">
+          <div class="flex items-center justify-between">
             <div class="min-w-0">
-              <div class="font-semibold truncate">${label}</div>
-              <div class="text-xs opacity-50 font-mono">${masked}</div>
+              <span class="font-bold text-base truncate">${label}</span>
+              <span class="text-sm opacity-50 font-mono ml-2">${masked}</span>
             </div>
             <span class="badge ${statusOk ? "badge-success" : "badge-error"} badge-sm shrink-0">
               ${statusOk ? "正常" : "停用"}
@@ -142,14 +142,14 @@ function renderQuotaCards(results: QuotaResult[]): string {
           </div>
 
           <div class="flex items-center gap-4">
-            <div class="relative shrink-0" style="width:7rem;height:7rem;">
+            <div class="relative shrink-0" style="width:6.5rem;height:6.5rem;">
               <div class="w-full h-full rounded-full" style="background:conic-gradient(#3b82f6 0 ${pctNum}%, var(--color-base-300,#d1d5db) ${pctNum}% 100%);"></div>
-              <div class="absolute rounded-full bg-base-100 flex flex-col items-center justify-center" style="inset:0.7rem;">
+              <div class="absolute rounded-full bg-base-100 flex flex-col items-center justify-center" style="inset:0.6rem;">
                 <span class="text-xl font-bold" style="color:#3b82f6;">${k.remain_quota.toFixed(1)}</span>
                 <span class="text-xs opacity-60">剩余</span>
               </div>
             </div>
-            <div class="flex-1 flex flex-col gap-1.5 text-sm">
+            <div class="flex-1 flex flex-col gap-1 text-sm">
               <div class="flex items-center justify-between">
                 <span class="flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:#3b82f6;"></span>剩余</span>
                 <span class="font-semibold">${k.remain_quota.toFixed(2)} <span class="opacity-50">(${pctNum}%)</span></span>
@@ -158,23 +158,19 @@ function renderQuotaCards(results: QuotaResult[]): string {
                 <span class="flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-full bg-base-300"></span>已用</span>
                 <span class="font-semibold">${k.used_quota.toFixed(2)} <span class="opacity-50">(${usagePct}%)</span></span>
               </div>
-              <div class="border-t border-base-300 my-0.5"></div>
+              <div class="border-t border-base-200 my-0.5"></div>
               <div class="flex items-center justify-between">
                 <span class="opacity-60">总额度</span>
                 <span class="font-semibold">${k.total_quota.toFixed(2)}</span>
               </div>
+              <div class="flex items-center justify-between">
+                <span class="opacity-60">套餐</span>
+                <span class="font-medium truncate ml-2">${escapeHtml(k.name || "—")}</span>
+              </div>
             </div>
           </div>
 
-          <div class="border-t border-base-300 my-0"></div>
-
-          <div class="flex flex-col gap-2 text-xs">
-            <div class="flex items-center justify-between">
-              <span class="opacity-60">套餐</span>
-              <span class="truncate ml-2 text-sm font-medium">${escapeHtml(k.name || "—")}</span>
-            </div>
-            ${renderTimeline(k.created_time, k.expired_time, days, daysCls)}
-          </div>
+          ${renderTimeline(k.created_time, k.expired_time, days, daysCls)}
         </div>
       </div>`;
   });
@@ -184,12 +180,11 @@ function renderQuotaCards(results: QuotaResult[]): string {
 
 /** Render subscription period as a visual timeline progress bar with countdown */
 function renderTimeline(createdTime: string, expiredTime: string, daysLeft: number, daysCls: string): string {
-  // Calculate progress percentage through the subscription period
   const start = parseDate(createdTime);
   const end = parseDate(expiredTime);
   const now = Date.now();
 
-  let progressPct = 50; // fallback
+  let progressPct = 50;
   if (start && end && end > start) {
     const elapsed = now - start;
     const total = end - start;
@@ -198,35 +193,35 @@ function renderTimeline(createdTime: string, expiredTime: string, daysLeft: numb
 
   const barColor = progressPct > 80 ? "#f87171" : progressPct > 60 ? "#fbbf24" : "#3b82f6";
 
-  // Format dates short
-  const fmtShort = (s: string) => {
+  // Full date format: M/D HH:mm
+  const fmtFull = (s: string) => {
     if (!s) return "—";
     const parts = s.split(" ");
     const d = (parts[0] || "").split("-");
-    if (d.length !== 3) return s.slice(0, 10);
-    return `${d[1] || ""}/${d[2] || ""}`;
+    const t = (parts[1] || "").slice(0, 5); // HH:mm
+    if (d.length !== 3) return escapeHtml(s);
+    return `${+(d[0] || 0)}/${+(d[1] || 0)}/${+(d[2] || 0)} ${t}`;
   };
 
-  // Countdown display
+  // Countdown
   const countdownHtml = isNaN(daysLeft)
     ? `<span class="opacity-50">—</span>`
     : daysLeft <= 0
       ? `<span class="text-error font-bold">已到期</span>`
-      : `<span class="font-mono font-bold ${daysCls}" style="font-size:1.1rem;">${daysLeft}</span><span class="opacity-60 ml-0.5">天</span>`;
+      : `<span class="font-mono font-bold text-base ${daysCls}">${daysLeft}</span><span class="opacity-60 ml-0.5">天后到期</span>`;
 
   return `
-    <div class="mt-1 rounded-lg bg-base-200/50 p-2.5">
-      <div class="flex items-center justify-between mb-1.5">
-        <span class="opacity-60 text-xs">服务周期</span>
-        <div class="flex items-baseline gap-0.5 text-sm">${countdownHtml}</div>
+    <div class="rounded-lg bg-base-200/60 px-3 py-2">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-sm opacity-70">服务周期</span>
+        <div class="flex items-baseline gap-1 text-sm">${countdownHtml}</div>
       </div>
-      <div class="relative h-2 rounded-full bg-base-300 overflow-hidden">
-        <div class="absolute inset-y-0 left-0 rounded-full transition-all" style="width:${progressPct}%;background:${barColor};"></div>
-        <div class="absolute inset-y-0 rounded-full w-1 bg-base-100 border border-base-300" style="left:calc(${progressPct}% - 2px);top:-1px;bottom:-1px;width:6px;height:calc(100% + 2px);border-radius:3px;"></div>
+      <div class="relative h-2.5 rounded-full bg-base-300 overflow-hidden">
+        <div class="absolute inset-y-0 left-0 rounded-full" style="width:${progressPct}%;background:${barColor};"></div>
       </div>
-      <div class="flex justify-between mt-1 text-xs opacity-50">
-        <span>${fmtShort(createdTime)}</span>
-        <span>${fmtShort(expiredTime)}</span>
+      <div class="flex justify-between mt-1 text-sm opacity-60 font-mono">
+        <span>${fmtFull(createdTime)}</span>
+        <span>${fmtFull(expiredTime)}</span>
       </div>
     </div>`;
 }

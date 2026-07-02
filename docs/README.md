@@ -1,8 +1,15 @@
 # docs/ 文档索引
 
-## 📖 当前有效文档
+## 架构与决策
 
-### 部署与运维
+| 文档 | 说明 |
+|------|------|
+| [architecture-decisions.md](architecture-decisions.md) | 技术选型、存储设计、状态机、关键决策备忘 |
+| [worker-architecture.md](worker-architecture.md) | Worker 多实例扩展规划 |
+| [worker-github-interaction.md](worker-github-interaction.md) | Worker ↔ GitHub Actions 交互流程 |
+| [notification-strategy.md](notification-strategy.md) | 为什么用 Worker 做消息中转 |
+
+## 部署与运维
 
 | 文档 | 说明 |
 |------|------|
@@ -12,7 +19,7 @@
 | [user-credentials-guide.md](user-credentials-guide.md) | 部署前需准备的凭据清单 |
 | [ai-secrets-config-guide.md](ai-secrets-config-guide.md) | 让 AI 帮你配置 Secrets |
 
-### 接入渠道
+## 接入渠道
 
 | 文档 | 说明 |
 |------|------|
@@ -20,7 +27,7 @@
 | [channel-telegram.md](channel-telegram.md) | Telegram Bot 接入 |
 | [channel-wecom.md](channel-wecom.md) | 企业微信接入 |
 
-### 功能配置
+## 功能配置
 
 | 文档 | 说明 |
 |------|------|
@@ -30,32 +37,6 @@
 | [image-cdn-guide.md](image-cdn-guide.md) | 图片 CDN（R2 + 自定义域名） |
 | [fetch-modes-guide.md](fetch-modes-guide.md) | 文章抓取两种模式说明 |
 
-### 架构参考
-
-| 文档 | 说明 |
-|------|------|
-| [worker-architecture.md](worker-architecture.md) | Worker 架构与扩展规划 |
-| [worker-github-interaction.md](worker-github-interaction.md) | Worker ↔ GitHub Actions 交互流程 |
-| [notification-strategy.md](notification-strategy.md) | 为什么用 Worker 做消息中转 |
-
 ---
 
-## 📦 归档文档（已完成的设计/重构，保留供追溯）
-
-以下文档是已执行完毕的一次性设计方案或迁移记录，不再需要日常参考。
-移入 `docs/archive/` 目录。
-
-| 文档 | 原因 |
-|------|------|
-| redesign-v2.md | v2 重构设计文档，已全部实施完毕 |
-| run-task-refactor-design.md | Bash→Python 重构，已完成 |
-| code-quality-fix-design.md | 代码质量修复，已完成 |
-| workflow-slim-design.md | Workflow 瘦身，已完成 |
-| feishu-fetcher-split-design.md | Feishu fetcher 拆分，已完成 |
-| capabilities-refactor-tasks.md | capabilities 重构任务，已完成 |
-| admin-panel-design.md | Admin 页面设计文档，已实施 |
-| hugo-to-astro-migration.md | Hugo→Astro 迁移方案，已完成 |
-| pycore-usage-optimization.md | pycore 复用分析，一次性文档 |
-| deployment-guide.md | 早期 AI 部署指南，已被 admin-setup-guide.md 替代 |
-| oracle-cloud-free-tier.md | Oracle Cloud 教程，与 msgflow 无直接关系 |
-| oracle-cloud-create-instance.md | Oracle Cloud 教程，与 msgflow 无直接关系 |
+> 编码规范见 `worker-v2/AGENTS.md`，项目级 AI 指引见根目录 `CLAUDE.md`。

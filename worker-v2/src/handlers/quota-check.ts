@@ -94,14 +94,13 @@ function renderQuotaCards(results: QuotaResult[]): string {
     if (!r.ok) {
       const info = escapeHtml(r.info || "查询失败");
       return `
-        <div class="card bg-base-100 shadow border border-error/30">
-          <div class="card-body p-4">
-            <div class="flex items-center gap-2">
-              <span class="badge badge-error badge-sm">✗</span>
-              <span class="font-medium">${label}</span>
-              <span class="text-xs text-base-content/50 font-mono">${masked}</span>
+        <div class="card bg-base-100 shadow border border-error/40">
+          <div class="card-body gap-1 py-3 px-4">
+            <div class="flex items-center justify-between">
+              <span class="font-semibold">${label}</span>
+              <span class="text-xs opacity-50 font-mono">${masked}</span>
             </div>
-            <p class="text-sm text-error mt-1">${info}</p>
+            <div class="text-error text-sm">${info}</div>
           </div>
         </div>`;
     }
@@ -109,42 +108,83 @@ function renderQuotaCards(results: QuotaResult[]): string {
     const k = r.key_info!;
     const pct = k.remaining_percentage ?? (k.total_quota > 0 ? (k.remain_quota / k.total_quota) * 100 : 0);
     const pctNum = Math.min(100, Math.max(0, Math.round(pct)));
-    const ringColor = pctNum > 50 ? "text-success" : pctNum > 20 ? "text-warning" : "text-error";
-    const statusBadge = k.status === 1
-      ? `<span class="badge badge-success badge-xs">正常</span>`
-      : `<span class="badge badge-error badge-xs">停用</span>`;
+    const usagePct = 100 - pctNum;
+    const statusOk = k.status === 1;
+
+    // Parse remaining days
+    const daysMatch = (k.remaining_time || "").match(/[\d.]+/);
+    const days = daysMatch ? Math.round(parseFloat(daysMatch[0])) : NaN;
+    const daysTxt = isNaN(days) ? "—" : `${days} 天`;
+    const daysCls = !isNaN(days) && days <= 5 ? "text-error" : "";
+
+    // Format dates
+    const fmtDate = (s: string) => {
+      if (!s) return "—";
+      const parts = s.split(" ");
+      const d = parts[0] || "";
+      const t = parts[1] || "";
+      const p = d.split("-");
+      if (p.length !== 3) return escapeHtml(s);
+      return `${+(p[0] || 0)}/${+(p[1] || 0)}/${+(p[2] || 0)}${t ? " " + t : ""}`;
+    };
 
     return `
       <div class="card bg-base-100 shadow">
-        <div class="card-body p-4">
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="font-bold">${label}</span>
-                ${statusBadge}
+        <div class="card-body gap-3 p-4">
+          <div class="flex items-start justify-between gap-2">
+            <div class="min-w-0">
+              <div class="font-semibold truncate">${label}</div>
+              <div class="text-xs opacity-50 font-mono">${masked}</div>
+            </div>
+            <span class="badge ${statusOk ? "badge-success" : "badge-error"} badge-sm shrink-0">
+              ${statusOk ? "正常" : "停用"}
+            </span>
+          </div>
+
+          <div class="flex items-center gap-4">
+            <div class="relative shrink-0" style="width:7rem;height:7rem;">
+              <div class="w-full h-full rounded-full" style="background:conic-gradient(#3b82f6 0 ${pctNum}%, var(--color-base-300,#d1d5db) ${pctNum}% 100%);"></div>
+              <div class="absolute rounded-full bg-base-100 flex flex-col items-center justify-center" style="inset:0.7rem;">
+                <span class="text-xl font-bold" style="color:#3b82f6;">${k.remain_quota.toFixed(1)}</span>
+                <span class="text-xs opacity-60">剩余</span>
               </div>
-              <span class="text-xs text-base-content/50 font-mono">${masked}</span>
             </div>
-            <div class="radial-progress ${ringColor} text-sm" style="--value:${pctNum};--size:3.5rem;--thickness:4px;" role="progressbar">
-              ${pctNum}%
+            <div class="flex-1 flex flex-col gap-1.5 text-sm">
+              <div class="flex items-center justify-between">
+                <span class="flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:#3b82f6;"></span>剩余</span>
+                <span class="font-semibold">${k.remain_quota.toFixed(2)} <span class="opacity-50">(${pctNum}%)</span></span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-full bg-base-300"></span>已用</span>
+                <span class="font-semibold">${k.used_quota.toFixed(2)} <span class="opacity-50">(${usagePct}%)</span></span>
+              </div>
+              <div class="border-t border-base-300 my-0.5"></div>
+              <div class="flex items-center justify-between">
+                <span class="opacity-60">总额度</span>
+                <span class="font-semibold">${k.total_quota.toFixed(2)}</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="opacity-60">有效期</span>
+                <span class="font-semibold ${daysCls}">${daysTxt}</span>
+              </div>
             </div>
           </div>
-          <div class="grid grid-cols-2 gap-x-4 gap-y-1 mt-3 text-sm">
-            <div class="text-base-content/60">剩余额度</div>
-            <div class="font-medium text-right">${k.remain_quota.toFixed(2)}</div>
-            <div class="text-base-content/60">已用额度</div>
-            <div class="font-medium text-right">${k.used_quota.toFixed(2)}</div>
-            <div class="text-base-content/60">总额度</div>
-            <div class="font-medium text-right">${k.total_quota.toFixed(2)}</div>
-            <div class="text-base-content/60">有效期</div>
-            <div class="font-medium text-right">${escapeHtml(k.remaining_time || "—")}</div>
-            <div class="text-base-content/60">套餐</div>
-            <div class="font-medium text-right">${escapeHtml(k.name || "—")}</div>
+
+          <div class="border-t border-base-300 my-0"></div>
+
+          <div class="flex flex-col gap-1 text-xs">
+            <div class="flex justify-between">
+              <span class="opacity-60">服务周期</span>
+              <span class="font-mono">${fmtDate(k.created_time)} - ${fmtDate(k.expired_time)}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="opacity-60">套餐</span>
+              <span class="truncate ml-2">${escapeHtml(k.name || "—")}</span>
+            </div>
           </div>
-          <div class="text-xs text-base-content/40 mt-2">${escapeHtml(k.created_time || "—")} ~ ${escapeHtml(k.expired_time || "—")}</div>
         </div>
       </div>`;
   });
 
-  return `<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">${cards.join("")}</div>`;
+  return `<div class="flex flex-col gap-3">${cards.join("")}</div>`;
 }

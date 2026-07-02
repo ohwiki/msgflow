@@ -1,33 +1,33 @@
-<div class="space-y-6">
-  <div class="card bg-base-100 shadow">
-    <div class="card-body">
-      <h2 class="card-title">💰 EasyClaude 额度查询</h2>
-      <p class="text-sm text-base-content/60">查询 easyclaude.com 中转 key 的剩余额度</p>
+<div class="max-w-2xl mx-auto flex flex-col gap-3">
+  <div class="flex items-center justify-between">
+    <h1 class="text-lg font-semibold">💰 EasyClaude 额度查询</h1>
+    {{#hasKeys}}
+    <button class="btn btn-ghost btn-sm gap-1" hx-post="/api/quota/check" hx-vals='{"mode":"saved"}' hx-target="#quota-result" hx-indicator="#quota-loading">
+      🔄 刷新 ({{keyCount}})
+    </button>
+    {{/hasKeys}}
+  </div>
 
-      {{#hasKeys}}
-      <div class="mt-4">
-        <button class="btn btn-primary" hx-post="/api/quota/check" hx-vals='{"mode":"saved"}' hx-target="#quota-result" hx-indicator="#quota-loading">
-          🔄 查询已配置的 Key ({{keyCount}})
-        </button>
-      </div>
-      {{/hasKeys}}
-      {{^hasKeys}}
-      <div class="alert alert-info text-sm mt-4">
-        💡 尚未配置 key，请先在 <a href="/settings" class="link font-medium">设置页面</a> 添加 EasyClaude Keys，或使用下方手动查询。
-      </div>
-      {{/hasKeys}}
-
-      <div class="divider text-sm">手动查询</div>
-      <form hx-post="/api/quota/check" hx-target="#quota-result" hx-indicator="#quota-loading" class="flex gap-2">
+  <div class="collapse collapse-arrow bg-base-100 shadow">
+    <input type="checkbox" {{^hasKeys}}checked{{/hasKeys}} />
+    <div class="collapse-title text-sm font-medium py-2 min-h-0">手动查询（临时）</div>
+    <div class="collapse-content">
+      <form hx-post="/api/quota/check" hx-target="#quota-result" hx-indicator="#quota-loading" class="join w-full">
         <input type="hidden" name="mode" value="manual"/>
-        <input type="text" name="api_key" class="input input-bordered flex-1" placeholder="sk-xxxxxxxx"/>
-        <button type="submit" class="btn btn-outline">查询</button>
+        <input type="text" name="api_key" class="input input-bordered input-sm join-item flex-1 font-mono" placeholder="sk-xxxxxxxx" autocomplete="off"/>
+        <button type="submit" class="btn btn-primary btn-sm join-item">查询</button>
       </form>
     </div>
   </div>
 
-  <div id="quota-loading" class="htmx-indicator flex justify-center py-8">
-    <span class="loading loading-spinner loading-lg"></span>
+  {{^hasKeys}}
+  <div class="alert alert-info text-sm py-2">
+    💡 尚未配置 key，请先在 <a href="/settings" class="link font-medium">设置</a> 中添加。
+  </div>
+  {{/hasKeys}}
+
+  <div id="quota-loading" class="htmx-indicator flex justify-center py-4">
+    <span class="loading loading-spinner loading-md"></span>
   </div>
   <div id="quota-result" hx-swap="innerHTML">
     {{#hasKeys}}

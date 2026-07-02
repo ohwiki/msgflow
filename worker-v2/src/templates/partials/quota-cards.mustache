@@ -1,0 +1,98 @@
+{{^hasResults}}
+<div class="alert alert-warning">没有可查询的 key</div>
+{{/hasResults}}
+{{#hasResults}}
+<div class="flex flex-col gap-3">
+  {{#results}}
+  {{#ok}}
+  <div class="card bg-base-100 shadow">
+    <div class="card-body gap-2 p-4">
+      <div class="flex items-center justify-between">
+        <div class="min-w-0">
+          <span class="font-bold text-base truncate">{{label}}</span>
+          <span class="text-sm opacity-50 font-mono ml-2">{{masked}}</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button class="btn btn-outline btn-xs gap-1" onclick="navigator.clipboard.writeText(this.dataset.key);this.querySelector('span').textContent='已复制';setTimeout(()=>this.querySelector('span').textContent='复制',800)" data-key="{{rawKey}}" title="复制完整 Key">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>复制</span>
+          </button>
+          {{#statusOk}}
+          <span class="badge badge-success badge-sm shrink-0">正常</span>
+          {{/statusOk}}
+          {{^statusOk}}
+          <span class="badge badge-error badge-sm shrink-0">停用</span>
+          {{/statusOk}}
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        <div class="relative shrink-0" style="width:6.5rem;height:6.5rem;">
+          <div class="w-full h-full rounded-full" style="background:conic-gradient(#3b82f6 0 {{pctNum}}%, var(--color-base-300,#d1d5db) {{pctNum}}% 100%);"></div>
+          <div class="absolute rounded-full bg-base-100 flex flex-col items-center justify-center" style="inset:0.6rem;">
+            <span class="text-xl font-bold" style="color:#3b82f6;">{{remainShort}}</span>
+            <span class="text-xs opacity-60">剩余</span>
+          </div>
+        </div>
+        <div class="flex-1 flex flex-col gap-1 text-sm">
+          <div class="flex items-center justify-between">
+            <span class="flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-full" style="background:#3b82f6;"></span>剩余</span>
+            <span class="font-semibold">{{remainFull}} <span class="opacity-50">({{pctNum}}%)</span></span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="flex items-center gap-1.5"><span class="inline-block w-2.5 h-2.5 rounded-full bg-base-300"></span>已用</span>
+            <span class="font-semibold">{{usedFull}} <span class="opacity-50">({{usagePct}}%)</span></span>
+          </div>
+          <div class="border-t border-base-200 my-0.5"></div>
+          <div class="flex items-center justify-between">
+            <span class="opacity-60">总额度</span>
+            <span class="font-semibold">{{totalFull}}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="opacity-60">套餐</span>
+            <span class="font-medium truncate ml-2">{{quotaName}}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-lg bg-base-200/60 px-3 py-2">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-sm opacity-70">服务周期</span>
+          <div class="flex items-baseline gap-1 text-sm">
+            {{#isExpired}}<span class="text-error font-bold">已到期</span>{{/isExpired}}
+            {{#daysWarning}}<span class="font-mono font-bold text-base text-error">{{daysLeft}}</span><span class="opacity-60 ml-0.5">天后到期</span>{{/daysWarning}}
+            {{#daysNormal}}<span class="font-mono font-bold text-base">{{daysLeft}}</span><span class="opacity-60 ml-0.5">天后到期</span>{{/daysNormal}}
+            {{#daysUnknown}}<span class="opacity-50">—</span>{{/daysUnknown}}
+          </div>
+        </div>
+        <div class="relative h-2.5 rounded-full bg-base-300 overflow-hidden">
+          <div class="absolute inset-y-0 left-0 rounded-full" style="width:{{timelinePct}}%;background:{{timelineColor}};"></div>
+        </div>
+        <div class="flex justify-between mt-1.5 text-sm font-mono">
+          <span class="opacity-60">{{createdFmt}}</span>
+          <span class="font-semibold">{{expiredFmt}}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  {{/ok}}
+  {{^ok}}
+  <div class="card bg-base-100 shadow border border-error/40">
+    <div class="card-body gap-1 py-3 px-4">
+      <div class="flex items-center justify-between">
+        <span class="font-semibold">{{label}}</span>
+        <div class="flex items-center gap-1.5">
+          <span class="text-sm opacity-50 font-mono">{{masked}}</span>
+          <button class="btn btn-outline btn-xs gap-1" onclick="navigator.clipboard.writeText(this.dataset.key);this.querySelector('span').textContent='已复制';setTimeout(()=>this.querySelector('span').textContent='复制',800)" data-key="{{rawKey}}" title="复制完整 Key">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>复制</span>
+          </button>
+        </div>
+      </div>
+      <div class="text-error text-sm">{{info}}</div>
+    </div>
+  </div>
+  {{/ok}}
+  {{/results}}
+</div>
+{{/hasResults}}

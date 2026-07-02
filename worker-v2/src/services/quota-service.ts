@@ -70,11 +70,11 @@ export class QuotaService {
     try {
       const keyInfo = await this.client.query(entry.key);
       this.log.info("quota_query_ok", { label: entry.label, remain: String(keyInfo.remain_quota) });
-      return { label: entry.label, masked, ok: true, key_info: keyInfo };
+      return { label: entry.label, masked, rawKey: entry.key, ok: true, key_info: keyInfo };
     } catch (e) {
       const info = e instanceof AppError ? e.message : (e instanceof Error ? e.message : "未知错误");
       this.log.warn("quota_query_failed", { label: entry.label, masked, error: info });
-      return { label: entry.label, masked, ok: false, info };
+      return { label: entry.label, masked, rawKey: entry.key, ok: false, info };
     }
   }
 
@@ -153,4 +153,103 @@ function parseKeyInfo(raw: Record<string, unknown>): QuotaKeyInfo {
     created_time: String(raw.created_time ?? ""),
     expired_time: String(raw.expired_time ?? ""),
   };
+}
+
+// ─── View Model Helpers (data prep for Mustache) ────────
+
+export interface QuotaCardViewModel {
+  // identity
+  label: string;
+  masked: string;
+  rawKey: string;
+  ok: boolean;
+  info?: string;
+  // status
+  statusOk?: boolean;
+  // quota numbers (formatted)
+  remainShort?: string;
+  remainFull?: string;
+  usedFull?: string;
+  totalFull?: string;
+  pctNum?: number;
+  usagePct?: number;
+  quotaName?: string;
+  // timeline
+  daysLeft?: number;
+  isExpired?: boolean;
+  daysWarning?: boolean;
+  daysNormal?: boolean;
+  daysUnknown?: boolean;
+  timelinePct?: number;
+  timelineColor?: string;
+  createdFmt?: string;
+  expiredFmt?: string;
+}
+
+/** Transform raw QuotaResult[] into view models ready for Mustache. */
+export function toCardViewModels(results: QuotaResult[]): QuotaCardViewModel[] {
+  return results.map((r) => {
+    if (!r.ok) {
+      return { label: r.label, masked: r.masked, rawKey: r.rawKey, ok: false, info: r.info || "查询失败" };
+    }
+
+    const k = r.key_info!;
+    const pct = k.remaining_percentage ?? (k.total_quota > 0 ? (k.remain_quota / k.total_quota) * 100 : 0);
+    const pctNum = Math.min(100, Math.max(0, Math.round(pct)));
+    const usagePct = 100 - pctNum;
+
+    // Days left
+    const daysMatch = (k.remaining_time || "").match(/[\d.]+/);
+    const daysLeft = daysMatch ? Math.round(parseFloat(daysMatch[0])) : NaN;
+
+    // Timeline progress
+    const start = parseDateStr(k.created_time);
+    const end = parseDateStr(k.expired_time);
+    const now = Date.now();
+    let timelinePct = 50;
+    if (start && end && end > start) {
+      timelinePct = Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)));
+    }
+    const timelineColor = timelinePct > 80 ? "#f87171" : timelinePct > 60 ? "#fbbf24" : "#3b82f6";
+
+    return {
+      label: r.label,
+      masked: r.masked,
+      rawKey: r.rawKey,
+      ok: true,
+      statusOk: k.status === 1,
+      remainShort: k.remain_quota.toFixed(1),
+      remainFull: k.remain_quota.toFixed(2),
+      usedFull: k.used_quota.toFixed(2),
+      totalFull: k.total_quota.toFixed(2),
+      pctNum,
+      usagePct,
+      quotaName: k.name || "—",
+      daysLeft: isNaN(daysLeft) ? undefined : daysLeft,
+      isExpired: !isNaN(daysLeft) && daysLeft <= 0,
+      daysWarning: !isNaN(daysLeft) && daysLeft > 0 && daysLeft <= 5,
+      daysNormal: !isNaN(daysLeft) && daysLeft > 5,
+      daysUnknown: isNaN(daysLeft),
+      timelinePct,
+      timelineColor,
+      createdFmt: formatDate(k.created_time),
+      expiredFmt: formatDate(k.expired_time),
+    };
+  });
+}
+
+/** Format "2026-07-02 18:17:33" → "2026/7/2 18:17:33" */
+export function formatDate(s: string): string {
+  if (!s) return "—";
+  const parts = s.split(" ");
+  const d = (parts[0] || "").split("-");
+  const t = parts[1] || "00:00:00";
+  if (d.length !== 3) return s;
+  return `${d[0]}/${+(d[1] || 0)}/${+(d[2] || 0)} ${t}`;
+}
+
+function parseDateStr(s: string): number | null {
+  if (!s) return null;
+  const t = Date.parse(s.replace(" ", "T"));
+  return isNaN(t) ? null : t;
 }

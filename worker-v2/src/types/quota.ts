@@ -23,6 +23,7 @@ export interface QuotaKeyInfo {
 export interface QuotaResult {
   label: string;
   masked: string;
+  rawKey: string;
   ok: boolean;
   info?: string;
   key_info?: QuotaKeyInfo;

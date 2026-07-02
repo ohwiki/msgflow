@@ -163,28 +163,76 @@ function renderQuotaCards(results: QuotaResult[]): string {
                 <span class="opacity-60">总额度</span>
                 <span class="font-semibold">${k.total_quota.toFixed(2)}</span>
               </div>
-              <div class="flex items-center justify-between">
-                <span class="opacity-60">有效期</span>
-                <span class="font-semibold ${daysCls}">${daysTxt}</span>
-              </div>
             </div>
           </div>
 
           <div class="border-t border-base-300 my-0"></div>
 
-          <div class="flex flex-col gap-1 text-xs">
-            <div class="flex justify-between">
-              <span class="opacity-60">服务周期</span>
-              <span class="font-mono">${fmtDate(k.created_time)} - ${fmtDate(k.expired_time)}</span>
-            </div>
-            <div class="flex justify-between">
+          <div class="flex flex-col gap-2 text-xs">
+            <div class="flex items-center justify-between">
               <span class="opacity-60">套餐</span>
-              <span class="truncate ml-2">${escapeHtml(k.name || "—")}</span>
+              <span class="truncate ml-2 text-sm font-medium">${escapeHtml(k.name || "—")}</span>
             </div>
+            ${renderTimeline(k.created_time, k.expired_time, days, daysCls)}
           </div>
         </div>
       </div>`;
   });
 
   return `<div class="flex flex-col gap-3">${cards.join("")}</div>`;
+}
+
+/** Render subscription period as a visual timeline progress bar with countdown */
+function renderTimeline(createdTime: string, expiredTime: string, daysLeft: number, daysCls: string): string {
+  // Calculate progress percentage through the subscription period
+  const start = parseDate(createdTime);
+  const end = parseDate(expiredTime);
+  const now = Date.now();
+
+  let progressPct = 50; // fallback
+  if (start && end && end > start) {
+    const elapsed = now - start;
+    const total = end - start;
+    progressPct = Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
+  }
+
+  const barColor = progressPct > 80 ? "#f87171" : progressPct > 60 ? "#fbbf24" : "#3b82f6";
+
+  // Format dates short
+  const fmtShort = (s: string) => {
+    if (!s) return "—";
+    const parts = s.split(" ");
+    const d = (parts[0] || "").split("-");
+    if (d.length !== 3) return s.slice(0, 10);
+    return `${d[1] || ""}/${d[2] || ""}`;
+  };
+
+  // Countdown display
+  const countdownHtml = isNaN(daysLeft)
+    ? `<span class="opacity-50">—</span>`
+    : daysLeft <= 0
+      ? `<span class="text-error font-bold">已到期</span>`
+      : `<span class="font-mono font-bold ${daysCls}" style="font-size:1.1rem;">${daysLeft}</span><span class="opacity-60 ml-0.5">天</span>`;
+
+  return `
+    <div class="mt-1 rounded-lg bg-base-200/50 p-2.5">
+      <div class="flex items-center justify-between mb-1.5">
+        <span class="opacity-60 text-xs">服务周期</span>
+        <div class="flex items-baseline gap-0.5 text-sm">${countdownHtml}</div>
+      </div>
+      <div class="relative h-2 rounded-full bg-base-300 overflow-hidden">
+        <div class="absolute inset-y-0 left-0 rounded-full transition-all" style="width:${progressPct}%;background:${barColor};"></div>
+        <div class="absolute inset-y-0 rounded-full w-1 bg-base-100 border border-base-300" style="left:calc(${progressPct}% - 2px);top:-1px;bottom:-1px;width:6px;height:calc(100% + 2px);border-radius:3px;"></div>
+      </div>
+      <div class="flex justify-between mt-1 text-xs opacity-50">
+        <span>${fmtShort(createdTime)}</span>
+        <span>${fmtShort(expiredTime)}</span>
+      </div>
+    </div>`;
+}
+
+function parseDate(s: string): number | null {
+  if (!s) return null;
+  const t = Date.parse(s.replace(" ", "T"));
+  return isNaN(t) ? null : t;
 }

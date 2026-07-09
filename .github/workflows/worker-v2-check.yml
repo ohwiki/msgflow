@@ -2,9 +2,14 @@ name: Worker v2 Check
 
 on:
   push:
-    paths: ['worker-v2/**']
+    paths:
+      - 'worker-v2/**'
+      - '.github/workflows/worker-v2-check.yml'
   pull_request:
-    paths: ['worker-v2/**']
+    paths:
+      - 'worker-v2/**'
+      - '.github/workflows/worker-v2-check.yml'
+  workflow_dispatch:
 
 jobs:
   check:

@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>公众号排版器 — MsgFlow</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif; background:#f5f5f5; height:100vh; display:flex; flex-direction:column; }
+.toolbar { display:flex; align-items:center; gap:12px; padding:12px 20px; background:#fff; border-bottom:1px solid #e5e7eb; box-shadow:0 1px 3px rgba(0,0,0,0.05); flex-wrap:wrap; }
+.toolbar h1 { font-size:16px; font-weight:700; color:#1f2937; margin-right:auto; }
+.toolbar select { padding:6px 12px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; background:#fff; cursor:pointer; }
+.toolbar-select { padding:4px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:12px; background:#fff; cursor:pointer; }
+.toolbar button { padding:8px 16px; border:none; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.15s; }
+.btn-format { background:#DC2626; color:#fff; }
+.btn-format:hover { background:#B91C1C; }
+.btn-copy { background:#059669; color:#fff; }
+.btn-copy:hover { background:#047857; }
+.btn-copy:disabled { background:#9CA3AF; cursor:not-allowed; }
+.checkbox-label { display:flex; align-items:center; gap:6px; font-size:13px; color:#4b5563; cursor:pointer; user-select:none; }
+.checkbox-label input { width:16px; height:16px; accent-color:#7C3AED; cursor:pointer; }
+.fs-group { display:flex; align-items:center; gap:10px; padding:4px 10px; border:1px solid #e5e7eb; border-radius:6px; background:#fafafa; }
+.fs-item { display:flex; align-items:center; gap:4px; }
+.fs-item .fs-name { font-size:12px; color:#6b7280; }
+.fs-select { padding:3px 6px; border:1px solid #d1d5db; border-radius:4px; font-size:12px; background:#fff; cursor:pointer; color:#4b5563; }
+.fs-select:hover { border-color:#7C3AED; }
+.fs-reset { border:none; background:transparent; color:#9ca3af; font-size:11px; cursor:pointer; text-decoration:underline; }
+.fs-reset:hover { color:#7C3AED; }
+.main { display:flex; flex:1; overflow:hidden; }
+.history-pane { width:220px; min-width:160px; max-width:350px; display:flex; flex-direction:column; border-right:1px solid #e5e7eb; background:#fafafa; resize:horizontal; overflow:hidden; }
+.history-list { flex:1; overflow-y:auto; }
+.history-actions { display:flex; gap:6px; padding:8px 12px; border-bottom:1px solid #e5e7eb; }
+.action-btn { flex:1; padding:6px 8px; border:1px dashed #d1d5db; border-radius:6px; background:#fff; font-size:12px; cursor:pointer; transition:all 0.15s; text-align:center; }
+.action-btn:hover { border-color:#7C3AED; background:#f5f3ff; }
+.inline-input-box { display:flex; gap:4px; padding:6px 12px; border-bottom:1px solid #e5e7eb; background:#f9fafb; align-items:center; }
+.inline-input { flex:1; min-width:0; padding:5px 8px; border:1px solid #d1d5db; border-radius:4px; font-size:12px; outline:none; }
+.inline-input:focus { border-color:#7C3AED; box-shadow:0 0 0 2px rgba(124,58,237,0.1); }
+.inline-confirm { border:none; background:#7C3AED; color:#fff; width:24px; height:24px; border-radius:4px; cursor:pointer; font-size:12px; flex-shrink:0; }
+.inline-cancel { border:none; background:#f3f4f6; color:#6b7280; width:24px; height:24px; border-radius:4px; cursor:pointer; font-size:12px; flex-shrink:0; }
+.inline-cancel:hover { background:#FEE2E2; color:#DC2626; }
+.history-item { padding:10px 14px; border-bottom:1px solid #f3f4f6; cursor:pointer; transition:background 0.1s; position:relative; }
+.history-item:hover { background:#f3f4f6; }
+.history-item.active { background:#EDE9FE; border-left:3px solid #7C3AED; }
+.history-item .title { font-size:13px; font-weight:500; color:#1f2937; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; max-width:calc(100% - 24px); }
+.history-item .meta { font-size:11px; color:#9ca3af; display:flex; gap:6px; align-items:center; }
+.history-item .meta .ai-badge { background:#EDE9FE; color:#7C3AED; padding:1px 4px; border-radius:3px; font-size:10px; font-weight:600; }
+.history-item .del-btn { position:absolute; top:8px; right:8px; width:20px; height:20px; border:none; background:transparent; color:#d1d5db; cursor:pointer; font-size:14px; border-radius:4px; display:flex; align-items:center; justify-content:center; }
+.history-item .del-btn:hover { background:#FEE2E2; color:#DC2626; }
+.folder-group { border-bottom:1px solid #e5e7eb; }
+.folder-group.collapsed .folder-items { display:none; }
+.folder-header { display:flex; align-items:center; gap:6px; padding:8px 12px; cursor:pointer; font-size:12px; font-weight:600; color:#6b7280; background:#f3f4f6; }
+.folder-header:hover { background:#e5e7eb; }
+.folder-icon { font-size:14px; }
+.folder-name { flex:1; }
+.folder-count { font-size:10px; background:#e5e7eb; padding:1px 5px; border-radius:8px; }
+.folder-del-btn { border:none; background:transparent; color:#d1d5db; cursor:pointer; font-size:14px; padding:0 4px; border-radius:4px; margin-left:4px; }
+.folder-del-btn:hover { background:#FEE2E2; color:#DC2626; }
+.editor-pane { flex:1; display:flex; flex-direction:column; border-right:1px solid #e5e7eb; }
+.preview-container { flex:1; display:flex; flex-direction:column; background:#fff; }
+textarea { flex:1; padding:16px; font-family:'SF Mono',Consolas,monospace; font-size:13px; line-height:1.7; border:none; outline:none; resize:none; background:#fafafa; }
+iframe { flex:1; border:none; background:#fff; }
+.pane-header { padding:8px 16px; font-size:12px; font-weight:600; color:#6b7280; background:#f9fafb; border-bottom:1px solid #e5e7eb; letter-spacing:1px; display:flex; align-items:center; justify-content:space-between; }
+.pane-header .hint { font-weight:400; color:#9ca3af; }
+/* Tabs */
+.tabs { display:flex; background:#f9fafb; border-bottom:1px solid #e5e7eb; }
+.tab { flex:1; padding:10px 16px; font-size:13px; font-weight:600; text-align:center; cursor:pointer; border-bottom:2px solid transparent; color:#6b7280; transition:all 0.15s; }
+.tab:hover { color:#1f2937; background:#f3f4f6; }
+.tab.active-basic { color:#DC2626; border-bottom-color:#DC2626; }
+.tab.active-ai { color:#7C3AED; border-bottom-color:#7C3AED; }
+.tab .badge { display:inline-block; font-size:10px; padding:1px 6px; border-radius:8px; margin-left:6px; font-weight:700; }
+.tab .badge-basic { background:#FEE2E2; color:#DC2626; }
+.tab .badge-ai { background:#EDE9FE; color:#7C3AED; }
+.tab.disabled { opacity:0.4; cursor:not-allowed; }
+.preview-frames { flex:1; position:relative; }
+.preview-frames iframe { position:absolute; top:0; left:0; width:100%; height:100%; }
+.preview-frames iframe.hidden { visibility:hidden; }
+/* Status */
+.status { padding:8px 16px; font-size:12px; color:#6b7280; background:#f9fafb; border-top:1px solid #e5e7eb; display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+.status .pass { color:#059669; }
+.status .fail { color:#DC2626; }
+@media (max-width:768px) {
+  .main { flex-direction:column; }
+  .history-pane { width:100%; max-height:150px; border-right:none; border-bottom:1px solid #e5e7eb; }
+  .editor-pane { border-right:none; border-bottom:1px solid #e5e7eb; min-height:30vh; }
+  .preview-container { min-height:50vh; }
+}
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <h1>📝 公众号排版器</h1>
+  <select id="theme">
+    {{#themes}}
+    <option value="{{id}}"{{#isDefault}} selected{{/isDefault}}>{{name}}{{#isDefault}}（默认）{{/isDefault}}</option>
+    {{/themes}}
+  </select>
+  <label class="checkbox-label">
+    <input type="checkbox" id="enableAI">
+    <span>✨ 启用 AI 排版</span>
+  </label>
+  <label class="checkbox-label">
+    <input type="checkbox" id="enableGuide">
+    <span>引导语</span>
+  </label>
+  <label class="checkbox-label">
+    <input type="checkbox" id="enableSignature">
+    <span>署名</span>
+  </label>
+  <label class="checkbox-label">
+    <input type="checkbox" id="enableFootnotes" checked>
+    <span>链接转脚注</span>
+  </label>
+  <label class="checkbox-label">
+    <input type="checkbox" id="enableTitle">
+    <span>渲染标题</span>
+  </label>
+  <select id="fontSize" class="toolbar-select" title="正文字号">
+    <option value="14">14px</option>
+    <option value="15" selected>15px</option>
+    <option value="16">16px</option>
+    <option value="17">17px</option>
+    <option value="18">18px</option>
+  </select>
+  <select id="lineHeight" class="toolbar-select" title="行高">
+    <option value="1.6">行高1.6</option>
+    <option value="1.75">行高1.75</option>
+    <option value="1.8" selected>行高1.8</option>
+    <option value="2.0">行高2.0</option>
+    <option value="2.2">行高2.2</option>
+  </select>
+  <button class="btn-format" onclick="runFormat()">排版</button>
+  <button class="btn-copy" id="copyBtn" onclick="doCopy()" disabled>复制到公众号</button>
+  <div class="fs-group" title="直接选择各类文字字号（不重新排版）">
+    <span class="fs-item"><span class="fs-name">正文</span>
+      <select class="fs-select" id="fsSelBody" onchange="setFontSize('body',this.value)">
+        <option value="">默认(15)</option>
+        <option value="12">12px</option><option value="13">13px</option><option value="14">14px</option>
+        <option value="15">15px</option><option value="16">16px</option><option value="17">17px</option>
+        <option value="18">18px</option><option value="19">19px</option><option value="20">20px</option>
+      </select>
+    </span>
+    <span class="fs-item"><span class="fs-name">标题</span>
+      <select class="fs-select" id="fsSelTitle" onchange="setFontSize('title',this.value)">
+        <option value="">默认(22)</option>
+        <option value="18">18px</option><option value="20">20px</option><option value="22">22px</option>
+        <option value="24">24px</option><option value="26">26px</option><option value="28">28px</option>
+        <option value="30">30px</option><option value="32">32px</option>
+      </select>
+    </span>
+    <span class="fs-item"><span class="fs-name">二级标题</span>
+      <select class="fs-select" id="fsSelH2" onchange="setFontSize('h2',this.value)">
+        <option value="">默认(18)</option>
+        <option value="14">14px</option><option value="15">15px</option><option value="16">16px</option>
+        <option value="17">17px</option><option value="18">18px</option><option value="20">20px</option>
+        <option value="22">22px</option><option value="24">24px</option>
+      </select>
+    </span>
+    <button class="fs-reset" onclick="resetFontSize()">重置</button>
+  </div>
+</div>
+<div class="main">
+  <div class="history-pane" id="historyPane">
+    <div class="pane-header">
+      <span>历史记录</span>
+      <span class="hint" id="historyCount"></span>
+    </div>
+    <div class="history-actions">
+      <button class="action-btn" id="btnNewFolder" onclick="showInlineInput('folder')">📁+</button>
+      <button class="action-btn" id="btnNewDoc" onclick="showInlineInput('doc')">📄+</button>
+    </div>
+    <div class="inline-input-box" id="inlineInputBox" style="display:none;">
+      <select id="inlineFolderSelect" style="display:none;padding:4px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:11px;max-width:80px;"></select>
+      <input type="text" id="inlineInput" class="inline-input" placeholder="" onkeydown="if(event.key==='Enter')confirmInlineInput();if(event.key==='Escape')hideInlineInput();">
+      <button class="inline-confirm" onclick="confirmInlineInput()">✓</button>
+      <button class="inline-cancel" onclick="hideInlineInput()">×</button>
+    </div>
+    <div class="history-list" id="historyList">
+      <p style="padding:16px;color:#9ca3af;font-size:12px;">加载中...</p>
+    </div>
+  </div>
+  <div class="editor-pane">
+    <div class="pane-header">
+      <span>MARKDOWN 输入</span>
+      <span class="hint">Ctrl+Enter 排版</span>
+    </div>
+    <textarea id="md" placeholder="在此粘贴 Markdown 文章内容...&#10;&#10;支持：标题、段落、加粗、引用、代码块、图片、列表等"></textarea>
+  </div>
+  <div class="preview-container">
+    <div class="tabs">
+      <div class="tab active-basic" id="tabBasic" onclick="switchTab('basic')">
+        普通排版 <span class="badge badge-basic" id="badgeBasic"></span>
+      </div>
+      <div class="tab disabled" id="tabAI" onclick="switchTab('ai')">
+        ✨ AI 排版 <span class="badge badge-ai" id="badgeAI">未启用</span>
+      </div>
+    </div>
+    <div class="preview-frames">
+      <iframe id="previewBasic"></iframe>
+      <iframe id="previewAI" class="hidden"></iframe>
+    </div>
+  </div>
+</div>
+<div class="status" id="status">
+  <span>就绪 — 粘贴 Markdown 后点击「排版」。勾选「✨ 启用 AI 排版」可对比AI增强效果</span>
+</div>
+<script>
+let htmlBasic = '';
+let htmlAI = '';
+let htmlBasicRaw = '';
+let htmlAIRaw = '';
+let activeTab = 'basic';
+
+// Per-type absolute font-size in px. null = keep each element's original size.
+var fsAbsolute = { title: null, h2: null, h3: null, body: null };
+
+// Apply chosen absolute font-sizes to a raw formatted-HTML string, return adjusted HTML.
+// Keeps a data-fs-base attr so "默认/重置" can always restore the original size.
+function applyFontSizes(html) {
+  if (!html) return html;
+  var doc = new DOMParser().parseFromString(html, 'text/html');
+  if (!doc || !doc.body) return html;
+  var nodes = doc.querySelectorAll('[data-fs]');
+  for (var i = 0; i < nodes.length; i++) {
+    var el = nodes[i];
+    var kind = el.getAttribute('data-fs');
+    if (!(kind in fsAbsolute)) continue;
+    var base = el.getAttribute('data-fs-base');
+    if (base === null) {
+      var cur = parseFloat(el.style.fontSize) || 15;
+      base = String(cur);
+      el.setAttribute('data-fs-base', base);
+    }
+    var target = fsAbsolute[kind] != null ? fsAbsolute[kind] : parseFloat(base);
+    el.style.fontSize = target + 'px';
+  }
+  return doc.body.innerHTML;
+}
+
+// Recompute htmlBasic/htmlAI from their raw versions and re-render the preview frames.
+function updatePreview(which) {
+  if ((!which || which === 'basic') && htmlBasicRaw) {
+    htmlBasic = applyFontSizes(htmlBasicRaw);
+    renderFrame('previewBasic', htmlBasic);
+  }
+  if ((!which || which === 'ai') && htmlAIRaw) {
+    htmlAI = applyFontSizes(htmlAIRaw);
+    renderFrame('previewAI', htmlAI);
+  }
+}
+
+// value: '' → 默认（用原始字号）; 否则为具体 px 数值字符串
+function setFontSize(kind, value) {
+  fsAbsolute[kind] = value === '' ? null : parseFloat(value);
+  updatePreview();
+}
+
+function resetFontSize() {
+  fsAbsolute = { title: null, h2: null, h3: null, body: null };
+  ['fsSelBody','fsSelTitle','fsSelH2'].forEach(function(id) {
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+  updatePreview();
+}
+
+
+function switchTab(tab) {
+  if (tab === 'ai' && !htmlAI) return; // Can't switch to AI if no result
+  activeTab = tab;
+  const tabBasic = document.getElementById('tabBasic');
+  const tabAI = document.getElementById('tabAI');
+  const frameBasic = document.getElementById('previewBasic');
+  const frameAI = document.getElementById('previewAI');
+
+  if (tab === 'basic') {
+    tabBasic.className = 'tab active-basic';
+    tabAI.className = htmlAI ? 'tab' : 'tab disabled';
+    frameBasic.classList.remove('hidden');
+    frameAI.classList.add('hidden');
+  } else {
+    tabBasic.className = 'tab';
+    tabAI.className = 'tab active-ai';
+    frameBasic.classList.add('hidden');
+    frameAI.classList.remove('hidden');
+  }
+}
+
+async function runFormat() {
+  const md = document.getElementById('md').value;
+  const theme = document.getElementById('theme').value;
+  const useAI = document.getElementById('enableAI').checked;
+  const status = document.getElementById('status');
+  const copyBtn = document.getElementById('copyBtn');
+
+  if (!md.trim()) { status.innerHTML = '<span class="fail">请输入 Markdown 内容</span>'; return; }
+
+  htmlBasic = '';
+  htmlAI = '';
+  htmlBasicRaw = '';
+  htmlAIRaw = '';
+  copyBtn.disabled = true;
+
+  const aiLabel = useAI ? ' + AI分析（约10-30秒）' : '';
+  status.innerHTML = '<span>排版中...' + aiLabel + '</span>';
+  document.getElementById('badgeBasic').textContent = '';
+  document.getElementById('badgeAI').textContent = useAI ? '加载中...' : '未启用';
+  document.getElementById('tabAI').className = useAI ? 'tab' : 'tab disabled';
+
+  if (useAI) {
+    renderFrame('previewAI', '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:sans-serif;color:#7C3AED;"><p>✨ AI 正在分析文章结构...</p></div>');
+  }
+
+  // Always run basic
+  const basicPromise = fetchFormat(md, theme, false);
+
+  // Only run AI if checked
+  const aiPromise = useAI ? fetchFormat(md, theme, true) : null;
+
+  // Basic result
+  const basicResult = await basicPromise;
+  if (basicResult.ok) {
+    htmlBasicRaw = basicResult.data.html;
+    htmlBasic = applyFontSizes(htmlBasicRaw);
+    renderFrame('previewBasic', htmlBasic);
+    document.getElementById('badgeBasic').textContent = basicResult.data.stats.sections + '章';
+    copyBtn.disabled = false;
+  } else {
+    status.innerHTML = '<span class="fail">排版失败：' + basicResult.error + '</span>';
+    return;
+  }
+
+  if (!useAI) {
+    // Done - only basic
+    switchTab('basic');
+    const s = basicResult.data.stats;
+    status.innerHTML = '<span class="pass">✅ 排版完成</span><span>章节 ' + s.sections + ' · 段落 ' + s.paragraphs + '</span><span>主题：' + basicResult.data.theme.name + '</span>';
+    loadHistory();
+    return;
+  }
+
+  // Wait for AI result
+  const aiResult = await aiPromise;
+  if (aiResult.ok && aiResult.data.aiEnhanced) {
+    htmlAIRaw = aiResult.data.html;
+    htmlAI = applyFontSizes(htmlAIRaw);
+    renderFrame('previewAI', htmlAI);
+    const k = aiResult.data.stats.keywords;
+    document.getElementById('badgeAI').textContent = k + '处标记';
+    switchTab('ai');
+    status.innerHTML = '<span class="pass">✅ 普通排版完成</span><span style="color:#7C3AED">✨ AI排版完成（' + k + ' 处标记）</span><span>主题：' + basicResult.data.theme.name + '</span>';
+  } else {
+    document.getElementById('badgeAI').textContent = '未增强';
+    const errMsg = aiResult.ok ? 'LLM返回格式异常' : aiResult.error;
+    renderFrame('previewAI', '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#DC2626;font-family:sans-serif;"><p>AI排版未成功：' + errMsg + '</p></div>');
+    status.innerHTML = '<span class="pass">✅ 普通排版完成</span><span style="color:#9CA3AF">AI未增强（' + errMsg + '）</span>';
+  }
+
+  // Refresh history list
+  loadHistory();
+}
+
+async function fetchFormat(md, theme, useAI) {
+  try {
+    const payload = { markdown: md, theme: theme };
+    if (useAI) payload.ai = true;
+    if (document.getElementById('enableGuide').checked) payload.guide = true;
+    if (document.getElementById('enableSignature').checked) payload.signature = true;
+    if (document.getElementById('enableFootnotes').checked) payload.footnotes = true;
+    if (document.getElementById('enableTitle').checked) payload.showTitle = true;
+    payload.fontSize = parseInt(document.getElementById('fontSize').value);
+    payload.lineHeight = parseFloat(document.getElementById('lineHeight').value);
+    const resp = await fetch('/api/format', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (!resp.ok) return { ok: false, error: data.error || '请求失败' };
+    return { ok: true, data };
+  } catch (e) {
+    return { ok: false, error: e.message };
+  }
+}
+
+function renderFrame(id, html) {
+  const iframe = document.getElementById(id);
+  const doc = iframe.contentDocument || iframe.contentWindow.document;
+  doc.open();
+  doc.write('<html><head><meta charset="utf-8"><style>body{margin:16px auto;max-width:677px;} .mermaid{text-align:center;} .mermaid svg{max-width:100%;}</style></head><body>' + html + '<script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";mermaid.initialize({startOnLoad:false,theme:"default"});await mermaid.run({nodes:document.querySelectorAll(".mermaid")});<\/script></body></html>');
+  doc.close();
+}
+
+function doCopy() {
+  const html = activeTab === 'ai' && htmlAI ? htmlAI : htmlBasic;
+  if (!html) return;
+  const status = document.getElementById('status');
+
+  const container = document.createElement('div');
+  container.innerHTML = html;
+  container.style.position = 'fixed';
+  container.style.left = '-9999px';
+  document.body.appendChild(container);
+
+  const range = document.createRange();
+  range.selectNodeContents(container);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  try {
+    document.execCommand('copy');
+    const which = activeTab === 'ai' ? 'AI排版' : '普通排版';
+    status.innerHTML = '<span class="pass">✅ 已复制「' + which + '」到剪贴板，去公众号编辑器 Ctrl+V 粘贴</span>';
+  } catch (e) {
+    status.innerHTML = '<span class="fail">复制失败，请手动全选预览区域复制</span>';
+  }
+
+  sel.removeAllRanges();
+  document.body.removeChild(container);
+}
+
+// Keyboard shortcut
+document.getElementById('md').addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { runFormat(); }
+});
+
+// Theme change — auto re-render if there's content
+document.getElementById('theme').addEventListener('change', function() {
+  var md = document.getElementById('md').value;
+  if (md.trim() && htmlBasic) { runFormat(); }
+});
+
+// Checkbox changes — auto re-render
+['enableAI','enableGuide','enableSignature','enableFootnotes','enableTitle'].forEach(function(id) {
+  document.getElementById(id).addEventListener('change', function() {
+    var md = document.getElementById('md').value;
+    if (md.trim()) { runFormat(); }
+  });
+});
+
+// Font size / line height changes — auto re-render
+['fontSize','lineHeight'].forEach(function(id) {
+  document.getElementById(id).addEventListener('change', function() {
+    var md = document.getElementById('md').value;
+    if (md.trim()) { runFormat(); }
+  });
+});
+
+// Real-time preview — debounced input + auto save
+var debounceTimer = null;
+document.getElementById('md').addEventListener('input', function() {
+  clearTimeout(debounceTimer);
+  var md = this.value;
+  if (!md.trim()) return;
+  debounceTimer = setTimeout(function() {
+    var theme = document.getElementById('theme').value;
+    // fetchFormat already triggers auto-save on backend
+    fetchFormat(md, theme, false).then(function(res) {
+      if (res.ok) {
+        htmlBasicRaw = res.data.html;
+        htmlBasic = applyFontSizes(htmlBasicRaw);
+        renderFrame('previewBasic', htmlBasic);
+        document.getElementById('badgeBasic').textContent = res.data.stats.sections + '章';
+        document.getElementById('copyBtn').disabled = false;
+        loadHistory();
+      }
+    });
+  }, 1500);
+});
+
+// ─── History ─────────────────────────────────────────────────────────────
+
+async function loadHistory() {
+  try {
+    const resp = await fetch('/api/format-history');
+    const data = await resp.json();
+    const list = document.getElementById('historyList');
+    const items = data.items || [];
+    const folders = data.folders || ['默认'];
+    cachedFolders = folders;
+    document.getElementById('historyCount').textContent = items.length + '篇';
+
+    if (items.length === 0) {
+      list.innerHTML = '<p style="padding:16px;color:#9ca3af;font-size:12px;">暂无排版记录</p>';
+      return;
+    }
+
+    // Group by folder
+    let html = '';
+    for (const folder of folders) {
+      const folderItems = items.filter(function(i) { return i.folder === folder; });
+      html += '<div class="folder-group">';
+      html += '<div class="folder-header" onclick="currentFolder=\'' + escHtml(folder).replace(/'/g, "\\'") + '\';this.parentElement.classList.toggle(\'collapsed\')">';
+      html += '<span class="folder-icon">📁</span><span class="folder-name" ondblclick="event.stopPropagation();renameFolder(this,\'' + escHtml(folder).replace(/'/g, "\\'") + '\')">' + escHtml(folder) + '</span>';
+      html += '<span class="folder-count">' + folderItems.length + '</span>';
+      html += '<button class="folder-del-btn" onclick="event.stopPropagation();deleteFolder(\'' + escHtml(folder).replace(/'/g, "\\'") + '\')" title="删除文件夹">×</button>';
+      html += '</div>';
+      html += '<div class="folder-items">';
+      if (folderItems.length === 0) {
+        html += '<p style="padding:8px 14px;color:#9ca3af;font-size:11px;">空文件夹</p>';
+      } else {
+        html += folderItems.map(function(item) {
+        const date = new Date(item.createdAt + 'Z').toLocaleString('zh-CN', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+        const aiBadge = item.aiEnhanced ? '<span class="ai-badge">AI</span>' : '';
+        return '<div class="history-item" data-id="' + item.id + '" onclick="loadHistoryItem(' + item.id + ')">' +
+          '<div class="title" ondblclick="event.stopPropagation();renameItem(this,' + item.id + ')">' + escHtml(item.title) + '</div>' +
+          '<div class="meta"><span>' + date + '</span>' + aiBadge + '</div>' +
+          '<button class="del-btn" onclick="event.stopPropagation();deleteHistoryItem(' + item.id + ')" title="删除">×</button>' +
+        '</div>';
+      }).join('');
+      }
+      html += '</div></div>';
+    }
+    list.innerHTML = html;
+  } catch (e) {
+    document.getElementById('historyList').innerHTML = '<p style="padding:16px;color:#DC2626;font-size:12px;">加载失败</p>';
+  }
+}
+
+async function loadHistoryItem(id) {
+  try {
+    const resp = await fetch('/api/format-history/' + id);
+    const data = await resp.json();
+    if (data.markdown) {
+      document.getElementById('md').value = data.markdown;
+      if (data.theme) {
+        const sel = document.getElementById('theme');
+        for (let i = 0; i < sel.options.length; i++) {
+          if (sel.options[i].value === data.theme) { sel.selectedIndex = i; break; }
+        }
+      }
+      // Highlight active
+      document.querySelectorAll('.history-item').forEach(function(el) { el.classList.remove('active'); });
+      const active = document.querySelector('.history-item[data-id="' + id + '"]');
+      if (active) active.classList.add('active');
+
+      // Render preview
+      if (data.aiEnhanced && data.html) {
+        // AI result cached — show directly
+        htmlAIRaw = data.html;
+        htmlAI = applyFontSizes(htmlAIRaw);
+        renderFrame('previewAI', htmlAI);
+        document.getElementById('badgeAI').textContent = '已缓存';
+        document.getElementById('tabAI').className = 'tab active-ai';
+        switchTab('ai');
+      }
+      // Always render basic via real-time format
+      document.getElementById('badgeBasic').textContent = '渲染中...';
+      const fmtResp = await fetchFormat(data.markdown, data.theme, false);
+      if (fmtResp.ok) {
+        htmlBasicRaw = fmtResp.data.html;
+        htmlBasic = applyFontSizes(htmlBasicRaw);
+        renderFrame('previewBasic', htmlBasic);
+        document.getElementById('badgeBasic').textContent = fmtResp.data.stats.sections + '章';
+        if (!data.aiEnhanced || !data.html) switchTab('basic');
+      }
+      document.getElementById('copyBtn').disabled = false;
+    }
+  } catch (e) {
+    // ignore
+  }
+}
+
+async function deleteHistoryItem(id) {
+  if (!confirm('删除这条排版记录？')) return;
+  try {
+    await fetch('/api/format-history/' + id, { method: 'DELETE' });
+    loadHistory();
+  } catch (e) {
+    // ignore
+  }
+}
+
+async function deleteFolder(folderName) {
+  if (!confirm('删除文件夹「' + folderName + '」及其中所有文章？')) return;
+  try {
+    await fetch('/api/format-history?folder=' + encodeURIComponent(folderName), { method: 'DELETE' });
+    loadHistory();
+  } catch (e) {
+    // ignore
+  }
+}
+
+function renameFolder(el, oldName) {
+  var input = document.createElement('input');
+  input.className = 'inline-input';
+  input.value = oldName;
+  input.style.width = '100%';
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+
+  function commit() {
+    var newName = input.value.trim();
+    if (newName && newName !== oldName) {
+      fetch('/api/format-history?renameFolder=' + encodeURIComponent(oldName) + '&to=' + encodeURIComponent(newName), { method: 'PATCH' })
+        .then(function() { loadHistory(); });
+    } else {
+      loadHistory();
+    }
+  }
+  input.onkeydown = function(e) { if(e.key==='Enter') commit(); if(e.key==='Escape') loadHistory(); };
+  input.onblur = commit;
+}
+
+function renameItem(el, id) {
+  var oldTitle = el.textContent;
+  var input = document.createElement('input');
+  input.className = 'inline-input';
+  input.value = oldTitle;
+  input.style.width = '100%';
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+
+  function commit() {
+    var newTitle = input.value.trim();
+    if (newTitle && newTitle !== oldTitle) {
+      fetch('/api/format-history/' + id, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTitle })
+      }).then(function() { loadHistory(); });
+    } else {
+      loadHistory();
+    }
+  }
+  input.onkeydown = function(e) { if(e.key==='Enter') commit(); if(e.key==='Escape') loadHistory(); };
+  input.onblur = commit;
+}
+
+function escHtml(text) {
+  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function createFolder() {
+  const name = document.getElementById('inlineInput').value.trim();
+  if (!name) return;
+  hideInlineInput();
+  // Create empty folder marker
+  fetch('/api/format-history', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ folder: name })
+  }).then(function() { loadHistory(); });
+}
+
+function createDoc() {
+  const title = document.getElementById('inlineInput').value.trim();
+  if (!title) return;
+  const folder = document.getElementById('inlineFolderSelect').value || '默认';
+  hideInlineInput();
+  const md = '# ' + title + '\n\n## 第一章\n\n在此开始写作，可修改章节标题和内容...\n\n## 第二章\n\n继续添加更多章节...\n';
+  document.getElementById('md').value = md;
+  document.getElementById('md').focus();
+  // Save to history immediately in selected folder
+  fetch('/api/format', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ markdown: md, theme: document.getElementById('theme').value, folder: folder })
+  }).then(function() { loadHistory(); });
+}
+
+var inlineMode = '';
+var currentFolder = '默认';
+var cachedFolders = ['默认'];
+
+function showInlineInput(mode) {
+  inlineMode = mode;
+  var box = document.getElementById('inlineInputBox');
+  var input = document.getElementById('inlineInput');
+  var folderSelect = document.getElementById('inlineFolderSelect');
+  box.style.display = 'flex';
+  input.value = '';
+
+  if (mode === 'doc') {
+    // Show folder selector for doc creation
+    folderSelect.style.display = 'block';
+    folderSelect.innerHTML = cachedFolders.map(function(f) {
+      return '<option value="' + escHtml(f) + '"' + (f === currentFolder ? ' selected' : '') + '>' + escHtml(f) + '</option>';
+    }).join('');
+    input.placeholder = '文章标题...';
+  } else {
+    folderSelect.style.display = 'none';
+    input.placeholder = '文件夹名称...';
+  }
+  input.focus();
+}
+
+function hideInlineInput() {
+  document.getElementById('inlineInputBox').style.display = 'none';
+  inlineMode = '';
+}
+
+function confirmInlineInput() {
+  if (inlineMode === 'folder') createFolder();
+  else if (inlineMode === 'doc') createDoc();
+}
+
+// Load history on page load
+loadHistory();
+</script>
+</body>
+</html>

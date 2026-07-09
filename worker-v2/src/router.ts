@@ -24,6 +24,8 @@ import { apiNotePublish, apiNoteUpdateCookie } from "./handlers/api-note.js";
 import { pageHome, pageFetch, pageNote } from "./views/admin.js";
 import { pageDomain, apiDomainCheck } from "./handlers/domain-check.js";
 import { pageQuota, apiQuotaCheck } from "./handlers/quota-check.js";
+import { apiFormat, apiThemes, pageFormat, apiFormatDebug } from "./handlers/api-format.js";
+import { apiFormatHistory, apiFormatHistoryGet, apiFormatHistoryDelete, apiFormatHistoryPatch } from "./handlers/api-format-history.js";
 
 type RouteHandler = (request: Request, env: Env, log: Logger) => Promise<Response>;
 
@@ -65,6 +67,14 @@ const adminRoutes: Route[] = [
   { method: "POST", path: "/api/domain/check", handler: apiDomainCheck },
   { method: "GET", path: "/quota", handler: pageQuota },
   { method: "POST", path: "/api/quota/check", handler: apiQuotaCheck },
+  { method: "GET", path: "/format", handler: pageFormat },
+  { method: "POST", path: "/api/format", handler: apiFormat },
+  { method: "GET", path: "/api/themes", handler: apiThemes },
+  { method: "GET", path: "/api/format-debug", handler: apiFormatDebug },
+  { method: "GET", path: "/api/format-history", handler: apiFormatHistory },
+  { method: "POST", path: "/api/format-history", handler: apiFormatHistory },
+  { method: "DELETE", path: "/api/format-history", handler: apiFormatHistoryDelete },
+  { method: "PATCH", path: "/api/format-history", handler: apiFormatHistoryPatch },
 ];
 
 // Public reader routes (read.xxx.com, no auth)
@@ -114,6 +124,13 @@ export async function router(
   if (method === "GET" && path.match(/^\/api\/articles\/[^/]+$/)) return apiArticleDetail(request, env, log);
   if (method === "DELETE" && path.match(/^\/api\/articles\/[^/]+$/)) return apiArticleDelete(request, env, log);
   if (method === "POST" && path.match(/^\/api\/articles\/[^/]+\/publish$/)) return apiArticlePublish(request, env, log);
+
+  // Format history — prefix match for :id routes (auth required)
+  if (path.startsWith("/api/format-history/")) {
+    if (method === "GET") return apiFormatHistoryGet(request, env, log);
+    if (method === "DELETE") return apiFormatHistoryDelete(request, env, log);
+    if (method === "PATCH") return apiFormatHistoryPatch(request, env, log);
+  }
 
   return Res.notFound();
 }

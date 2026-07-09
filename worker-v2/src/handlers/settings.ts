@@ -20,12 +20,18 @@ export async function pageSettings(_request: Request, env: Env, _log: Logger): P
   const tavily_key = await env.KV.get("tavily_api_key") || "";
   const exa_key = await env.KV.get("exa_api_key") || "";
   const easyclaude_keys_text = await getEasyClaudeKeysText(env);
+  const ai_key = await env.KV.get("nullclaw_api_key") || "";
+  const ai_base_url = await env.KV.get("nullclaw_base_url") || "";
+  const ai_model = await env.KV.get("nullclaw_model") || "";
   return renderSettings({
     github_token_masked: github_token ? "••••••••" : "",
     github_repo,
     tavily_key_value: tavily_key,
     exa_key_value: exa_key,
     easyclaude_keys_text,
+    ai_key_value: ai_key,
+    ai_base_url_value: ai_base_url,
+    ai_model_value: ai_model,
   });
 }
 
@@ -71,6 +77,24 @@ export async function handleSettingsSubmit(request: Request, env: Env, log: Logg
     return renderSettings({ success: `EasyClaude Keys 已保存（${entries.length} 个）`, easyclaude_keys_text: keysText });
   }
 
+  if (action === "save_ai_config") {
+    const aiKey = (formData.get("nullclaw_api_key") as string)?.trim();
+    const aiBaseUrl = (formData.get("nullclaw_base_url") as string)?.trim();
+    const aiModel = (formData.get("nullclaw_model") as string)?.trim();
+
+    if (aiKey) await env.KV.put("nullclaw_api_key", aiKey);
+    if (aiBaseUrl) await env.KV.put("nullclaw_base_url", aiBaseUrl);
+    if (aiModel) await env.KV.put("nullclaw_model", aiModel);
+
+    log.info("ai_config_saved", { model: aiModel || "" });
+    return renderSettings({
+      success: "AI 配置已保存",
+      ai_key_value: await env.KV.get("nullclaw_api_key") || "",
+      ai_base_url_value: await env.KV.get("nullclaw_base_url") || "",
+      ai_model_value: await env.KV.get("nullclaw_model") || "",
+    });
+  }
+
   if (action === "change_password") {
     const currentPassword = formData.get("current_password") as string ?? "";
     const newPassword = formData.get("new_password") as string ?? "";
@@ -103,7 +127,7 @@ export async function handleSettingsSubmit(request: Request, env: Env, log: Logg
   return renderSettings({});
 }
 
-function renderSettings(data: { success?: string; error?: string; github_token_masked?: string; github_repo?: string; tavily_key_value?: string; exa_key_value?: string; easyclaude_keys_text?: string }): Response {
+function renderSettings(data: { success?: string; error?: string; github_token_masked?: string; github_repo?: string; tavily_key_value?: string; exa_key_value?: string; easyclaude_keys_text?: string; ai_key_value?: string; ai_base_url_value?: string; ai_model_value?: string }): Response {
   const content = Mustache.render(settingsTpl, data);
   const html = Mustache.render(layoutTpl, { ...baseVars, title: "设置", content });
   return Res.html(html);

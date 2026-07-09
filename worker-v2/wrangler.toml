@@ -4,7 +4,7 @@ compatibility_date = "2025-05-20"
 compatibility_flags = ["nodejs_compat"]
 
 rules = [
-  { type = "Text", globs = ["**/*.mustache"] }
+  { type = "Text", globs = ["**/*.mustache"], fallthrough = true }
 ]
 
 [triggers]

@@ -91,7 +91,7 @@ iframe { flex:1; border:none; background:#fff; }
   <h1>📝 公众号排版器</h1>
   <select id="theme">
     {{#themes}}
-    <option value="{{id}}"{{#isDefault}} selected{{/isDefault}}>{{name}}{{#isDefault}}（默认）{{/isDefault}}</option>
+    <option value="{{id}}" data-grid="{{defaultGrid}}"{{#isDefault}} selected{{/isDefault}}>{{name}}{{#isDefault}}（默认）{{/isDefault}}</option>
     {{/themes}}
   </select>
   <label class="checkbox-label">
@@ -113,6 +113,10 @@ iframe { flex:1; border:none; background:#fff; }
   <label class="checkbox-label">
     <input type="checkbox" id="enableTitle">
     <span>渲染标题</span>
+  </label>
+  <label class="checkbox-label">
+    <input type="checkbox" id="enableGrid">
+    <span>网格背景</span>
   </label>
   <select id="fontSize" class="toolbar-select" title="正文字号">
     <option value="14">14px</option>
@@ -366,6 +370,7 @@ async function fetchFormat(md, theme, useAI) {
     if (document.getElementById('enableSignature').checked) payload.signature = true;
     if (document.getElementById('enableFootnotes').checked) payload.footnotes = true;
     if (document.getElementById('enableTitle').checked) payload.showTitle = true;
+    payload.grid = document.getElementById('enableGrid').checked;
     payload.fontSize = parseInt(document.getElementById('fontSize').value);
     payload.lineHeight = parseFloat(document.getElementById('lineHeight').value);
     const resp = await fetch('/api/format', {
@@ -423,14 +428,22 @@ document.getElementById('md').addEventListener('keydown', function(e) {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { runFormat(); }
 });
 
-// Theme change — auto re-render if there's content
+// Sync grid checkbox to the selected theme's default (user can then override)
+function syncGridToTheme() {
+  var sel = document.getElementById('theme');
+  var opt = sel.options[sel.selectedIndex];
+  document.getElementById('enableGrid').checked = opt && opt.getAttribute('data-grid') === 'true';
+}
+
+// Theme change — sync grid default, then auto re-render if there's content
 document.getElementById('theme').addEventListener('change', function() {
+  syncGridToTheme();
   var md = document.getElementById('md').value;
   if (md.trim() && htmlBasic) { runFormat(); }
 });
 
 // Checkbox changes — auto re-render
-['enableAI','enableGuide','enableSignature','enableFootnotes','enableTitle'].forEach(function(id) {
+['enableAI','enableGuide','enableSignature','enableFootnotes','enableTitle','enableGrid'].forEach(function(id) {
   document.getElementById(id).addEventListener('change', function() {
     var md = document.getElementById('md').value;
     if (md.trim()) { runFormat(); }
@@ -527,6 +540,7 @@ async function loadHistoryItem(id) {
         for (let i = 0; i < sel.options.length; i++) {
           if (sel.options[i].value === data.theme) { sel.selectedIndex = i; break; }
         }
+        syncGridToTheme();
       }
       // Highlight active
       document.querySelectorAll('.history-item').forEach(function(el) { el.classList.remove('active'); });
@@ -697,6 +711,7 @@ function confirmInlineInput() {
 }
 
 // Load history on page load
+syncGridToTheme();
 loadHistory();
 </script>
 </body>

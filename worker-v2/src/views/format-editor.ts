@@ -15,6 +15,7 @@ export function formatEditorPage(): string {
     id: t.id,
     name: t.name,
     isDefault: t.id === defaultId,
+    defaultGrid: t.defaultGrid === true,
   }));
 
   return Mustache.render(editorTpl, { themes });

@@ -24,6 +24,7 @@ export interface FormatWithAIOptions {
   readonly showTitle?: boolean;
   readonly fontSize?: number;
   readonly lineHeight?: number;
+  readonly grid?: boolean;
 }
 
 export interface AIFormatResult extends FormatResult {
@@ -36,12 +37,12 @@ export class GzhFormatter implements IFormatter {
   private readonly renderer = new GzhRenderer();
   private readonly validator = new GzhValidator();
 
-  async format(markdown: string, themeId?: string, opts?: { guide?: boolean; signature?: boolean; footnotes?: boolean; showTitle?: boolean; fontSize?: number; lineHeight?: number }): Promise<FormatResult> {
+  async format(markdown: string, themeId?: string, opts?: { guide?: boolean; signature?: boolean; footnotes?: boolean; showTitle?: boolean; fontSize?: number; lineHeight?: number; grid?: boolean }): Promise<FormatResult> {
     const resolvedThemeId = themeId || getDefaultThemeId();
     const theme = getTheme(resolvedThemeId);
 
     const article = this.parser.parse(markdown);
-    const options: RenderOptions = { themeId: resolvedThemeId, autoNumbering: true, guide: opts?.guide, signature: opts?.signature, footnotes: opts?.footnotes, showTitle: opts?.showTitle, fontSize: opts?.fontSize, lineHeight: opts?.lineHeight };
+    const options: RenderOptions = { themeId: resolvedThemeId, autoNumbering: true, guide: opts?.guide, signature: opts?.signature, footnotes: opts?.footnotes, showTitle: opts?.showTitle, fontSize: opts?.fontSize, lineHeight: opts?.lineHeight, grid: opts?.grid };
     let { html, stats } = this.renderer.render(article, options);
 
     // Convert links to footnotes if enabled
@@ -74,6 +75,7 @@ export class GzhFormatter implements IFormatter {
       showTitle: options.showTitle,
       fontSize: options.fontSize,
       lineHeight: options.lineHeight,
+      grid: options.grid,
     };
     let { html, stats } = this.renderer.render(article, renderOptions);
 

@@ -159,6 +159,8 @@ export interface ThemeMeta {
   readonly name: string;
   readonly description: string;
   readonly scenes: readonly string[];
+  /** Whether this theme shows a grid-paper background by default */
+  readonly defaultGrid?: boolean;
 }
 
 /** Theme interface — each theme implements this */
@@ -166,8 +168,8 @@ export interface ITheme {
   readonly meta: ThemeMeta;
   readonly colors: ThemeColors;
 
-  /** Render the global container wrapper (open tag) */
-  renderContainerOpen(): string;
+  /** Render the global container wrapper (open tag). grid: overlay grid-paper background */
+  renderContainerOpen(grid?: boolean): string;
   /** Render the global container wrapper (close tag) */
   renderContainerClose(): string;
   /** Render the lead quote card */
@@ -237,6 +239,8 @@ export interface RenderOptions {
   readonly fontSize?: number;
   /** Custom line height (default: 1.8) */
   readonly lineHeight?: number;
+  /** Overlay grid-paper background. undefined = follow theme default */
+  readonly grid?: boolean;
 }
 
 /** AI content analysis result (interface, not bound to specific implementation) */

@@ -29,6 +29,7 @@ const FormatRequestSchema = z.object({
   showTitle: z.boolean().optional(),
   fontSize: z.number().min(12).max(24).optional(),
   lineHeight: z.number().min(1.2).max(3.0).optional(),
+  grid: z.boolean().optional(),
   folder: z.string().optional(),
 });
 
@@ -60,6 +61,7 @@ export async function apiFormat(request: Request, env: Env, log: Logger): Promis
       showTitle: body.showTitle,
       fontSize: body.fontSize,
       lineHeight: body.lineHeight,
+      grid: body.grid,
       logger: {
         info: (msg, data) => log.info(msg, data as Record<string, string>),
         error: (msg, data) => log.error(msg, data as Record<string, string>),
@@ -69,7 +71,7 @@ export async function apiFormat(request: Request, env: Env, log: Logger): Promis
     aiEnhanced = aiResult.aiEnhanced;
   } else {
     // Basic mode: deterministic, no AI
-    result = await formatter.format(body.markdown, body.theme, { guide: body.guide, signature: body.signature, footnotes: body.footnotes, showTitle: body.showTitle, fontSize: body.fontSize, lineHeight: body.lineHeight });
+    result = await formatter.format(body.markdown, body.theme, { guide: body.guide, signature: body.signature, footnotes: body.footnotes, showTitle: body.showTitle, fontSize: body.fontSize, lineHeight: body.lineHeight, grid: body.grid });
   }
 
   log.info("format_done", {

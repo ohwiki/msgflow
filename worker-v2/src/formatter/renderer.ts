@@ -40,7 +40,8 @@ export class GzhRenderer implements IRenderer {
     const colors = theme.colors;
 
     // Global container open
-    parts.push(theme.renderContainerOpen());
+    const grid = options.grid ?? theme.meta.defaultGrid ?? false;
+    parts.push(theme.renderContainerOpen(grid));
 
     // Article title (optional — WeChat has its own title)
     if (options.showTitle && article.title && article.title !== '无标题') {

@@ -11,8 +11,13 @@ export abstract class BaseTheme implements ITheme {
   abstract readonly meta: ThemeMeta;
   abstract readonly colors: ThemeColors;
 
-  renderContainerOpen(): string {
-    return `<section style="max-width:677px;margin:0 auto;background:#ffffff;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;color:${this.colors.body};line-height:1.75;letter-spacing:0.5px;overflow-x:hidden;">`;
+  renderContainerOpen(grid?: boolean): string {
+    return `<section style="max-width:677px;margin:0 auto;background:#ffffff;${grid ? this.gridBackground() : ""}font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;color:${this.colors.body};line-height:1.75;letter-spacing:0.5px;overflow-x:hidden;">`;
+  }
+
+  /** Grid-paper background CSS fragment. Subclasses may override for a tinted grid. */
+  protected gridBackground(): string {
+    return `background-image:linear-gradient(rgba(0,0,0,0.045) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,0.045) 1px,transparent 1px);background-size:20px 20px;`;
   }
 
   renderContainerClose(): string {

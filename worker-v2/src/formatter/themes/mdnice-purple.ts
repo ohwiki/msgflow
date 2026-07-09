@@ -13,6 +13,7 @@ export class MdnicePurpleTheme extends BaseTheme {
     name: "Mdnice紫色",
     description: "紫色左竖条+网格纸纹背景，适合技术文章和工具评测",
     scenes: ["技术", "工具评测", "教程"],
+    defaultGrid: true,
   };
 
   readonly colors: ThemeColors = {
@@ -30,8 +31,12 @@ export class MdnicePurpleTheme extends BaseTheme {
   private readonly fontStack =
     "Optima,'Microsoft YaHei',PingFangSC-regular,serif";
 
-  renderContainerOpen(): string {
-    return `<section style="margin:0;padding:0 10px;background-image:linear-gradient(90deg,rgba(50,0,0,0.05) 0%,rgba(0,0,0,0) 6.76%),linear-gradient(360deg,rgba(50,0,0,0.05) 0%,rgba(249,247,252,0) 9.46%);background-size:20px 20px;font-family:${this.fontStack};font-size:16px;color:#000;line-height:1.5em;word-break:break-word;">`;
+  renderContainerOpen(grid?: boolean): string {
+    return `<section style="margin:0;padding:0 10px;${grid ? this.gridBackground() : ""}font-family:${this.fontStack};font-size:16px;color:#000;line-height:1.5em;word-break:break-word;">`;
+  }
+
+  protected gridBackground(): string {
+    return `background-image:linear-gradient(90deg,rgba(50,0,0,0.05) 0%,rgba(0,0,0,0) 6.76%),linear-gradient(360deg,rgba(50,0,0,0.05) 0%,rgba(249,247,252,0) 9.46%);background-size:20px 20px;`;
   }
 
   renderChapterHeading(num: string, englishTag: string, title: string, isFirst: boolean): string {

@@ -18,8 +18,11 @@ export interface IArticleRepository {
   getByUrl(url: string): Promise<Article | null>;
   list(opts?: ListOptions): Promise<Article[]>;
   count(opts?: { status?: string }): Promise<number>;
+  getAllTags(): Promise<string[]>;
   updateStatus(id: string, status: string): Promise<void>;
   updateMarkdown(id: string, r2MdKey: string): Promise<void>;
+  updateTags(id: string, tags: string): Promise<void>;
+  updateTitle(id: string, title: string): Promise<void>;
   delete(id: string): Promise<void>;
 }
 

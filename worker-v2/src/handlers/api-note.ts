@@ -15,6 +15,7 @@
 import { Res } from "../lib/response.js";
 import { ValidationError, AppError } from "../lib/errors.js";
 import { escapeHtml } from "../lib/http.js";
+import { HTTP_STATUS } from "../lib/constants.js";
 import type { Logger } from "../lib/log.js";
 
 const NOTE_API_BASE = "https://note.com/api/v1";
@@ -39,11 +40,11 @@ ${content}`;
       body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }] }),
     });
   } catch (e: unknown) {
-    throw new AppError(`Translation API network error: ${e instanceof Error ? e.message : "unknown"}`, "TRANSLATE_NETWORK_ERROR", 502);
+    throw new AppError(`Translation API network error: ${e instanceof Error ? e.message : "unknown"}`, "TRANSLATE_NETWORK_ERROR", HTTP_STATUS.BAD_GATEWAY);
   }
 
   if (!resp.ok) {
-    throw new AppError(`Translation API error: ${resp.status}`, "TRANSLATE_ERROR", 502);
+    throw new AppError(`Translation API error: ${resp.status}`, "TRANSLATE_ERROR", HTTP_STATUS.BAD_GATEWAY);
   }
 
   const data = await resp.json<{ choices: { message: { content: string } }[] }>();

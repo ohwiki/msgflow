@@ -328,7 +328,7 @@ async function runFormat() {
     document.getElementById('badgeBasic').textContent = basicResult.data.stats.sections + '章';
     copyBtn.disabled = false;
   } else {
-    status.innerHTML = '<span class="fail">排版失败：' + basicResult.error + '</span>';
+    status.innerHTML = '<span class="fail">排版失败：' + escHtml(basicResult.error) + '</span>';
     return;
   }
 
@@ -354,8 +354,9 @@ async function runFormat() {
   } else {
     document.getElementById('badgeAI').textContent = '未增强';
     const errMsg = aiResult.ok ? 'LLM返回格式异常' : aiResult.error;
-    renderFrame('previewAI', '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#DC2626;font-family:sans-serif;"><p>AI排版未成功：' + errMsg + '</p></div>');
-    status.innerHTML = '<span class="pass">✅ 普通排版完成</span><span style="color:#9CA3AF">AI未增强（' + errMsg + '）</span>';
+    const errMsgEsc = escHtml(errMsg);
+    renderFrame('previewAI', '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#DC2626;font-family:sans-serif;"><p>AI排版未成功：' + errMsgEsc + '</p></div>');
+    status.innerHTML = '<span class="pass">✅ 普通排版完成</span><span style="color:#9CA3AF">AI未增强（' + errMsgEsc + '）</span>';
   }
 
   // Refresh history list
@@ -643,7 +644,7 @@ function renameItem(el, id) {
 }
 
 function escHtml(text) {
-  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return String(text == null ? '' : text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
 function createFolder() {

@@ -12,7 +12,7 @@
  */
 
 import { z } from 'zod';
-import type { ArticleType, IContentAnalysis, ISectionAnalysis } from './types.js';
+import type { ArticleType, IContentAnalysis, ISectionAnalysis, IMarkedSegment, ILeadQuoteAnalysis, MarkType } from './types.js';
 
 // ─── Zod Schema ──────────────────────────────────────────────────────────────
 
@@ -61,19 +61,14 @@ export const ContentAnalysisSchema = z.object({
 
 // ─── TypeScript Types ────────────────────────────────────────────────────────
 
-/** Mark type for inline text */
-export type MarkType = 'n' | 'u' | 'h' | 'b';
+/** Mark type for inline text (re-exported from the interface contract) */
+export type { MarkType };
 
 /** A text segment with its semantic mark */
-export interface MarkedSegment {
-  readonly t: string;
-  readonly m: MarkType;
-}
+export type MarkedSegment = IMarkedSegment;
 
 /** Lead quote with highlighted segments */
-export interface LeadQuoteAnalysis {
-  readonly segments: readonly MarkedSegment[];
-}
+export type LeadQuoteAnalysis = ILeadQuoteAnalysis;
 
 /** Analysis result for a single section */
 export interface SectionAnalysis extends ISectionAnalysis {

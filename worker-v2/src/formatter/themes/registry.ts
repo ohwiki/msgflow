@@ -22,7 +22,7 @@ function register(theme: ITheme): void {
   themes.set(theme.meta.id, theme);
 }
 
-// ─── Register all 6 themes (order matches theme-index.md) ────────────────────
+// ─── Register all themes (order matches theme-index.md) ──────────────────────
 register(new MoyuGreenTheme());         // 默认推荐
 register(new RedWhiteTheme());
 register(new GraphiteMinimalTheme());

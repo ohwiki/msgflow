@@ -76,7 +76,9 @@ export class ArticleRepository implements IArticleRepository {
       try {
         const arr = JSON.parse(row.tags) as string[];
         arr.forEach((t) => tagSet.add(t));
-      } catch { /* skip */ }
+      } catch {
+        console.warn(JSON.stringify({ level: "warn", event: "article_tags_parse_failed", tags: row.tags, ts: new Date().toISOString() }));
+      }
     }
     return [...tagSet].sort();
   }

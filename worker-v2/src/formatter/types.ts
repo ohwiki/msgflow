@@ -250,6 +250,22 @@ export interface IContentAnalysis {
   readonly highlights: readonly string[];
   readonly articleType: ArticleType;
   readonly sections: readonly ISectionAnalysis[];
+  readonly leadQuoteMarked?: ILeadQuoteAnalysis;
+  readonly markedSections?: readonly ISectionAnalysis[];
+}
+
+/** Semantic mark applied to an inline text segment (n=none, u=underline, h=highlight, b=bold) */
+export type MarkType = "n" | "u" | "h" | "b";
+
+/** A text segment with its semantic mark */
+export interface IMarkedSegment {
+  readonly t: string;
+  readonly m: MarkType;
+}
+
+/** Lead quote decomposed into marked segments */
+export interface ILeadQuoteAnalysis {
+  readonly segments: readonly IMarkedSegment[];
 }
 
 /** Per-section analysis result */
@@ -257,6 +273,10 @@ export interface ISectionAnalysis {
   readonly heading: string;
   readonly englishTag: string;
   readonly paragraphKeywords: readonly (readonly string[])[];
+  /** Paragraphs as marked segments (AI-enhanced rendering) */
+  readonly paragraphs?: readonly (readonly IMarkedSegment[])[];
+  /** Indices of paragraphs that should render as blockquotes */
+  readonly blockquotes?: readonly number[];
 }
 
 /** Renderer — assembles final HTML from parsed article + theme */

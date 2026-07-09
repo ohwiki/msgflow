@@ -20,13 +20,12 @@ import type {
   RenderStats,
   AstNode,
 } from "./types.js";
-import type { ContentAnalysis } from "./content-analysis.js";
 import { getTheme } from "./themes/registry.js";
 
 export class GzhRenderer implements IRenderer {
   render(article: ParsedArticle, options: RenderOptions): RenderResult {
     const theme = getTheme(options.themeId);
-    const analysis = options.analysis as ContentAnalysis | null | undefined;
+    const analysis = options.analysis;
     const autoNum = options.autoNumbering ?? true;
     const parts: string[] = [];
     const stats: Writeable<RenderStats> = {

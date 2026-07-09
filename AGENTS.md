@@ -6,16 +6,16 @@ msgflow — 消息驱动的 AI 内容工作流。Worker + Python + GitHub Action
 
 ```bash
 # Worker
-cd worker-v2 && npm install && npx wrangler dev
+cd worker && npm install && npx wrangler dev
 
 # Python
 cd python/src && uv run python run_task.py --help
 
 # 测试
-cd worker-v2 && npx vitest
+cd worker && npx vitest
 ```
 
-详细编码规范见 `worker-v2/AGENTS.md` 和 `CLAUDE.md`。
+详细编码规范见 `worker/AGENTS.md` 和 `CLAUDE.md`。
 
 配置 Secrets 时，读 `docs/ai-secrets-config-guide.md`。
 配置飞书 OAuth 时，读 `docs/feishu-oauth-setup.md`。
@@ -26,8 +26,8 @@ cd worker-v2 && npx vitest
 
 | 路径 | 允许放什么 |
 |------|-----------|
-| `worker-v2/src/` | Worker TypeScript 源码 |
-| `worker-v2/tests/` | Worker 测试 |
+| `worker/src/` | Worker TypeScript 源码 |
+| `worker/tests/` | Worker 测试 |
 | `python/src/` | Python 任务代码 |
 | `python/tests/` | Python 测试 |
 | `skills/` | Skill 定义（SKILL.md） |
@@ -38,7 +38,7 @@ cd worker-v2 && npx vitest
 
 ```
 msgflow/
-├── worker-v2/       # Cloudflare Worker（TypeScript）— 主力
+├── worker/       # Cloudflare Worker（TypeScript）— 主力
 ├── python/          # Python 任务执行器（新版）
 ├── python-legacy/   # 旧版 Python（只读参考，不修改）
 ├── skills/          # Skill 定义文件
@@ -69,11 +69,11 @@ deploy.sh
 - ❌ 创建新的顶层目录
 - ❌ 修改 `python-legacy/`（只读参考）
 - ❌ 修改 `worker/`（旧版，只读）
-- ❌ 在 `worker-v2/src/` 外放 TypeScript 代码
+- ❌ 在 `worker/src/` 外放 TypeScript 代码
 - ❌ 在 `python/src/` 外放 Python 代码
 - ❌ 创建 `scripts/`、`tools/`、`lib/`、`utils/` 等新目录
 
-**Worker 代码结构（worker-v2/src/）：**
+**Worker 代码结构（worker/src/）：**
 
 ```
 src/

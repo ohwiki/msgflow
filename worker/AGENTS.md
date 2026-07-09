@@ -1,6 +1,6 @@
 # AGENTS.md — msgflow Worker v2 编码规范
 
-本文件定义了 `worker-v2/` 的架构约定和编码规范。所有修改代码的 AI Agent 必须遵守。
+本文件定义了 `worker/` 的架构约定和编码规范。所有修改代码的 AI Agent 必须遵守。
 
 ## 架构分层
 

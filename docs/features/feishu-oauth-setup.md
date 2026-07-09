@@ -32,7 +32,7 @@ OAuth 授权（一次性）→ user_access_token + refresh_token
 |------|------|
 | `python/src/lib/feishu_oauth.py` | 一次性 OAuth 授权脚本（本地跑） |
 | `python/src/fetchers/feishu.py` | 飞书 fetcher（读 KV token → 调 blocks API） |
-| `worker-v2/src/index.ts` | cron handler（自动刷新 token） |
+| `worker/src/index.ts` | cron handler（自动刷新 token） |
 | `~/.feishu_token.json` | 本地 token 缓存（fallback） |
 | KV key: `feishu_user_token` | 远程 token 存储（GitHub Actions 用） |
 
@@ -61,7 +61,7 @@ uv run python lib/feishu_oauth.py
 ### 3. 上传 token 到 KV
 
 ```bash
-cd worker-v2
+cd worker
 npx wrangler kv key put --namespace-id "7158494aa5804d02ae472f82d4b61199" \
   "feishu_user_token" --value "$(cat ~/.feishu_token.json)" --remote
 ```
@@ -69,7 +69,7 @@ npx wrangler kv key put --namespace-id "7158494aa5804d02ae472f82d4b61199" \
 ### 4. 确认 Worker secrets 已设置
 
 ```bash
-cd worker-v2
+cd worker
 echo "<your_app_id>" | npx wrangler secret put FEISHU_APP_ID
 echo "<your_app_secret>" | npx wrangler secret put FEISHU_APP_SECRET
 ```

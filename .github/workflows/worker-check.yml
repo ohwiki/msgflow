@@ -1,14 +1,14 @@
-name: Worker v2 Check
+name: Worker Check
 
 on:
   push:
     paths:
-      - 'worker-v2/**'
-      - '.github/workflows/worker-v2-check.yml'
+      - 'worker/**'
+      - '.github/workflows/worker-check.yml'
   pull_request:
     paths:
-      - 'worker-v2/**'
-      - '.github/workflows/worker-v2-check.yml'
+      - 'worker/**'
+      - '.github/workflows/worker-check.yml'
   workflow_dispatch:
 
 jobs:
@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: worker-v2
+        working-directory: worker
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -26,7 +26,7 @@ jobs:
         with:
           node-version: '22'
           cache: 'pnpm'
-          cache-dependency-path: worker-v2/pnpm-lock.yaml
+          cache-dependency-path: worker/pnpm-lock.yaml
       - run: pnpm --config.minimumReleaseAge=0 install --frozen-lockfile
       - run: pnpm --config.minimumReleaseAge=0 run typecheck
       - run: pnpm --config.minimumReleaseAge=0 test

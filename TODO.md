@@ -80,4 +80,4 @@
 - 主分支：`main`（v2 重写后的代码，2026-05-29 合并）
 - 老代码参考：`legacy/v1-worker-js` 分支 / `legacy/pre-v2` tag（合并前的 main，JS worker + 老 Python 脚本）
 - Worker 部署地址：`https://msgflow-v2.ouraihub.workers.dev`
-- 本地开发：`cd worker-v2 && npx wrangler dev --local --port 8788`
+- 本地开发：`cd worker && npx wrangler dev --local --port 8788`

@@ -77,8 +77,8 @@ AI 需要问用户：
 AI 执行：
 1. gh secret set FEISHU_APP_ID --body "<value>" --repo ohwiki/msgflow
 2. gh secret set FEISHU_APP_SECRET --body "<value>" --repo ohwiki/msgflow
-3. cd worker-v2 && echo "<value>" | npx wrangler secret put FEISHU_APP_ID
-4. cd worker-v2 && echo "<value>" | npx wrangler secret put FEISHU_APP_SECRET
+3. cd worker && echo "<value>" | npx wrangler secret put FEISHU_APP_ID
+4. cd worker && echo "<value>" | npx wrangler secret put FEISHU_APP_SECRET
 ```
 
 ### 场景 2：用户说"帮我加一个新的 API Key"

@@ -1,5 +1,5 @@
 {
-  "name": "msgflow-worker-v2",
+  "name": "msgflow-worker",
   "version": "0.1.0",
   "private": true,
   "packageManager": "pnpm@11.6.0",

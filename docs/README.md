@@ -64,4 +64,4 @@ docs/
 
 ---
 
-> 编码规范：`worker-v2/AGENTS.md` ｜ AI 行为准则：`CLAUDE.md`
+> 编码规范：`worker/AGENTS.md` ｜ AI 行为准则：`CLAUDE.md`

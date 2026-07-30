@@ -153,6 +153,20 @@ export interface ThemeColors {
   readonly underline: string;
 }
 
+/** Data for a magazine-style cover card (themes that render one) */
+export interface CoverOptions {
+  readonly title: string;
+  readonly subtitle: string | null;
+  readonly articleType: ArticleType;
+}
+
+/** A single table-of-contents entry */
+export interface TocEntry {
+  readonly num: string;
+  readonly heading: string;
+  readonly englishTag: string;
+}
+
 /** Theme metadata */
 export interface ThemeMeta {
   readonly id: string;
@@ -172,6 +186,10 @@ export interface ITheme {
   renderContainerOpen(grid?: boolean): string;
   /** Render the global container wrapper (close tag) */
   renderContainerClose(): string;
+  /** Render a magazine-style cover card. Default: empty (theme opts out). */
+  renderCover(opts: CoverOptions): string;
+  /** Render a scrolling table-of-contents strip. Default: empty (theme opts out). */
+  renderToc(entries: readonly TocEntry[]): string;
   /** Render the lead quote card */
   renderLeadQuote(quote: string, author?: string): string;
   /** Render the highlights panel (3 key points) */

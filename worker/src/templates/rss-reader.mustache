@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RSS 阅读器 — MsgFlow</title>
+<link href="{{cdnDaisyui}}" rel="stylesheet" type="text/css"/>
+<link href="{{cdnDaisyuiThemes}}" rel="stylesheet" type="text/css"/>
+<script src="{{cdnTailwind}}"></script>
+<style>
+  /* AI 回复排版：CDN 版 Tailwind 无 typography 插件，Preflight 又清零了默认间距，手动恢复 */
+  .md-body > :first-child { margin-top: 0; }
+  .md-body > :last-child { margin-bottom: 0; }
+  .md-body p { margin: 0.5rem 0; line-height: 1.65; }
+  .md-body h1, .md-body h2, .md-body h3, .md-body h4 { margin: 0.9rem 0 0.4rem; font-weight: 600; line-height: 1.3; }
+  .md-body h1 { font-size: 1.15rem; }
+  .md-body h2 { font-size: 1.05rem; }
+  .md-body h3 { font-size: 1rem; }
+  .md-body h4 { font-size: 0.95rem; }
+  .md-body ul, .md-body ol { margin: 0.5rem 0; padding-left: 1.4rem; }
+  .md-body ul { list-style: disc; }
+  .md-body ol { list-style: decimal; }
+  .md-body li { margin: 0.2rem 0; line-height: 1.6; }
+  .md-body strong { font-weight: 600; }
+  .md-body em { font-style: italic; }
+  .md-body code { background: var(--fallback-b2, oklch(0.92 0 0)); padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-size: 0.85em; font-family: ui-monospace, monospace; }
+  .md-body pre { background: var(--fallback-b2, oklch(0.92 0 0)); padding: 0.6rem 0.8rem; border-radius: 0.4rem; overflow-x: auto; margin: 0.6rem 0; }
+  .md-body pre code { background: none; padding: 0; font-size: 0.85em; white-space: pre; }
+  .md-body a { color: var(--fallback-p, oklch(0.55 0.2 250)); text-decoration: underline; }
+</style>
+</head>
+<body class="h-screen flex flex-col bg-base-200 overflow-hidden">
+<div class="flex items-center gap-3 px-4 py-2 bg-base-100 border-b border-base-300 shadow-sm">
+  <a href="/" class="btn btn-ghost btn-sm">← 返回</a>
+  <h1 class="text-base font-bold">📰 RSS 阅读器</h1>
+  <div class="w-px h-6 bg-base-300"></div>
+  <button class="btn btn-sm btn-primary" onclick="showAddFeed()">+ 订阅源</button>
+  <button class="btn btn-sm btn-outline" onclick="showImport()">导入 OPML</button>
+  <button class="btn btn-sm btn-outline" id="refreshBtn" onclick="doRefresh()">↻ 刷新</button>
+  <label class="flex items-center gap-1.5 text-sm cursor-pointer select-none ml-auto">
+    <input type="checkbox" id="unreadOnly" class="checkbox checkbox-sm checkbox-primary" onchange="reloadArticles()">
+    <span>只看未读</span>
+  </label>
+</div>
+
+<div class="flex flex-1 overflow-hidden">
+  <!-- 左：订阅源树 -->
+  <div class="w-64 min-w-48 max-w-sm flex flex-col border-r border-base-300 bg-base-100 resize-x overflow-hidden">
+    <div class="px-4 py-2 text-xs font-semibold text-base-content/60 bg-base-200 border-b border-base-300 tracking-wider">订阅源</div>
+    <div class="flex-1 overflow-y-auto" id="feedTree"><p class="p-4 text-base-content/40 text-xs">加载中...</p></div>
+  </div>
+
+  <!-- 中：文章列表 -->
+  <div class="w-80 min-w-64 max-w-md flex flex-col border-r border-base-300 bg-base-100 resize-x overflow-hidden">
+    <div class="px-4 py-2 text-xs font-semibold text-base-content/60 bg-base-200 border-b border-base-300 tracking-wider" id="articleListTitle">文章</div>
+    <div class="flex-1 overflow-y-auto" id="articleList"><p class="p-4 text-base-content/40 text-xs">选择左侧订阅源</p></div>
+  </div>
+
+  <!-- 右：正文 + AI -->
+  <div class="flex-1 flex flex-col bg-base-100 min-w-0">
+    <div class="flex-1 relative overflow-hidden">
+      <div id="articleView" class="absolute inset-0 overflow-y-auto p-6 hidden">
+        <h2 class="text-xl font-bold mb-1" id="avTitle"></h2>
+        <div class="text-xs text-base-content/50 mb-4" id="avMeta"></div>
+        <iframe id="avFrame" class="w-full border border-base-300 rounded bg-white" sandbox="allow-popups allow-popups-to-escape-sandbox" style="min-height:60vh"></iframe>
+      </div>
+      <div id="articleEmpty" class="absolute inset-0 flex items-center justify-center text-base-content/40">选择一篇文章阅读</div>
+    </div>
+    <!-- AI 助手栏 -->
+    <div class="border-t border-base-300 bg-base-200 p-3 flex flex-col gap-2" style="max-height:40%">
+      <div class="flex items-center gap-2">
+        <select id="aiCommand" class="select select-sm select-bordered w-fit">
+          <option value="/summary">总结全文</option>
+          <option value="/keypoints">提取要点</option>
+          <option value="/translate">翻译全文</option>
+          <option value="/explain">术语解释</option>
+          <option value="/opinion">观点评析</option>
+          <option value="/digest">订阅源动态</option>
+          <option value="/intro">订阅源介绍</option>
+          <option value="/recommend">分类推荐</option>
+        </select>
+        <button class="btn btn-sm btn-primary" id="aiRunBtn" onclick="runAiCommand()">运行</button>
+        <input type="text" id="aiQuestion" class="input input-sm input-bordered flex-1 min-w-0" placeholder="或自由提问，回车发送" onkeydown="if(event.key==='Enter')runAiFree()">
+      </div>
+      <div id="aiReply" class="overflow-y-auto text-sm bg-base-100 rounded p-3 hidden max-w-none" style="max-height:30vh"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 弹窗：新增源 / 导入 OPML -->
+<dialog id="dlgAddFeed" class="modal">
+  <div class="modal-box">
+    <h3 class="font-bold text-lg mb-3">新增订阅源</h3>
+    <input type="text" id="addFeedUrl" class="input input-bordered w-full" placeholder="https://example.com/feed.xml">
+    <div class="modal-action">
+      <button class="btn btn-primary" onclick="submitAddFeed()">添加</button>
+      <button class="btn" onclick="document.getElementById('dlgAddFeed').close()">取消</button>
+    </div>
+  </div>
+</dialog>
+<dialog id="dlgImport" class="modal">
+  <div class="modal-box">
+    <h3 class="font-bold text-lg mb-3">导入 OPML</h3>
+    <textarea id="importText" class="textarea textarea-bordered w-full font-mono text-xs" rows="10" placeholder="粘贴 OPML 文件内容..."></textarea>
+    <div class="modal-action">
+      <button class="btn btn-primary" onclick="submitImport()">导入</button>
+      <button class="btn" onclick="document.getElementById('dlgImport').close()">取消</button>
+    </div>
+  </div>
+</dialog>
+
+<div class="px-4 py-1.5 text-xs text-base-content/60 bg-base-200 border-t border-base-300" id="status">就绪</div>
+<script>{{{script}}}</script>
+</body>
+</html>

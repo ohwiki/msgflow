@@ -4,16 +4,19 @@
   "private": true,
   "packageManager": "pnpm@11.6.0",
   "scripts": {
-    "dev": "wrangler dev",
+    "build:client": "esbuild src/client/format-editor.ts src/client/rss-reader.ts --bundle --minify --format=iife --outdir=src/templates --out-extension:.js=.client.js",
+    "dev": "pnpm run build:client && wrangler dev",
+    "predeploy": "pnpm run build:client",
     "deploy": "wrangler deploy --env production",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.client.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "tsc --noEmit && vitest run",
+    "check": "pnpm run typecheck && vitest run",
     "types": "wrangler types"
   },
   "dependencies": {
     "@ouraihub/llm": "0.2.1",
+    "fast-xml-parser": "^5.9.3",
     "marked": "18.0.4",
     "mustache": "4.2.0",
     "node-html-markdown": "2.0.0",

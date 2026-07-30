@@ -4,7 +4,7 @@ compatibility_date = "2025-05-20"
 compatibility_flags = ["nodejs_compat"]
 
 rules = [
-  { type = "Text", globs = ["**/*.mustache"], fallthrough = true }
+  { type = "Text", globs = ["**/*.mustache", "**/*.client.js", "**/*.css"], fallthrough = true }
 ]
 
 [triggers]
@@ -29,6 +29,19 @@ id = "7158494aa5804d02ae472f82d4b61199"
 [env.dev.vars]
 WORKER_URL = "http://localhost:8788"
 ADMIN_HOST = ""
+
+[[env.dev.d1_databases]]
+binding = "DB"
+database_name = "msgflow-content"
+database_id = "4e445ab4-f8c4-4346-b234-f81973b5babe"
+
+[[env.dev.r2_buckets]]
+binding = "R2"
+bucket_name = "msgflow-files"
+
+[[env.dev.kv_namespaces]]
+binding = "KV"
+id = "7158494aa5804d02ae472f82d4b61199"
 
 # ─── Production 环境 ────────────────────────
 # 部署命令: npx wrangler deploy --env production

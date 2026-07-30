@@ -14,6 +14,7 @@ import { ZenWhitespaceTheme } from "./zen-whitespace.js";
 import { MoyuTicketTheme } from "./moyu-ticket.js";
 import { OliveJournalTheme } from "./olive-journal.js";
 import { MdnicePurpleTheme } from "./mdnice-purple.js";
+import { MagazineEmeraldTheme } from "./magazine-emerald.js";
 
 /** All registered theme instances */
 const themes: Map<string, ITheme> = new Map();
@@ -30,6 +31,7 @@ register(new ZenWhitespaceTheme());
 register(new MoyuTicketTheme());
 register(new OliveJournalTheme());
 register(new MdnicePurpleTheme());
+register(new MagazineEmeraldTheme());
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 

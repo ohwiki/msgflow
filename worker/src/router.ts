@@ -26,6 +26,17 @@ import { pageDomain, apiDomainCheck } from "./handlers/domain-check.js";
 import { pageQuota, apiQuotaCheck } from "./handlers/quota-check.js";
 import { apiFormat, apiThemes, pageFormat, apiFormatDebug } from "./handlers/api-format.js";
 import { apiFormatHistory, apiFormatHistoryGet, apiFormatHistoryDelete, apiFormatHistoryPatch } from "./handlers/api-format-history.js";
+import {
+  pageRss,
+  apiRssFeeds,
+  apiRssFeedDelete,
+  apiRssImport,
+  apiRssRefresh,
+  apiRssArticles,
+  apiRssArticleGet,
+  apiRssArticleRead,
+  apiRssAi,
+} from "./handlers/api-rss.js";
 
 type RouteHandler = (request: Request, env: Env, log: Logger) => Promise<Response>;
 
@@ -75,6 +86,14 @@ const adminRoutes: Route[] = [
   { method: "POST", path: "/api/format-history", handler: apiFormatHistory },
   { method: "DELETE", path: "/api/format-history", handler: apiFormatHistoryDelete },
   { method: "PATCH", path: "/api/format-history", handler: apiFormatHistoryPatch },
+  // RSS 聚合阅读器
+  { method: "GET", path: "/rss", handler: pageRss },
+  { method: "GET", path: "/api/rss/feeds", handler: apiRssFeeds },
+  { method: "POST", path: "/api/rss/feeds", handler: apiRssFeeds },
+  { method: "POST", path: "/api/rss/import", handler: apiRssImport },
+  { method: "POST", path: "/api/rss/refresh", handler: apiRssRefresh },
+  { method: "GET", path: "/api/rss/articles", handler: apiRssArticles },
+  { method: "POST", path: "/api/rss/ai", handler: apiRssAi },
 ];
 
 // Public reader routes (read.xxx.com, no auth)
@@ -131,6 +150,11 @@ export async function router(
     if (method === "DELETE") return apiFormatHistoryDelete(request, env, log);
     if (method === "PATCH") return apiFormatHistoryPatch(request, env, log);
   }
+
+  // RSS — dynamic :id routes
+  if (method === "POST" && path.match(/^\/api\/rss\/articles\/[^/]+\/read$/)) return apiRssArticleRead(request, env, log);
+  if (method === "GET" && path.match(/^\/api\/rss\/articles\/[^/]+$/)) return apiRssArticleGet(request, env, log);
+  if (method === "DELETE" && path.match(/^\/api\/rss\/feeds\/[^/]+$/)) return apiRssFeedDelete(request, env, log);
 
   return Res.notFound();
 }

@@ -8,6 +8,7 @@ import { AppError } from "./lib/errors.js";
 import { Res } from "./lib/response.js";
 import { HTTP_STATUS } from "./lib/constants.js";
 import { fetchWithTimeout } from "./lib/http.js";
+import { refreshDueFeeds } from "./services/rss-service.js";
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -31,7 +32,10 @@ export default {
   },
 
   async scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
-    ctx.waitUntil(refreshFeishuToken(env));
+    const cronLog = createLogger({ rid: crypto.randomUUID().slice(0, 8), trigger: "cron" });
+    ctx.waitUntil(
+      Promise.allSettled([refreshFeishuToken(env), refreshDueFeeds(env, cronLog)]).then(() => undefined),
+    );
   },
 } satisfies ExportedHandler<Env>;
 

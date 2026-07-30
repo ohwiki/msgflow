@@ -42,6 +42,25 @@ export class GzhRenderer implements IRenderer {
     const grid = options.grid ?? theme.meta.defaultGrid ?? false;
     parts.push(theme.renderContainerOpen(grid));
 
+    // Magazine cover card (themes without one return "")
+    parts.push(theme.renderCover({
+      title: article.title && article.title !== '无标题' ? article.title : '',
+      subtitle: analysis?.leadQuote ?? article.leadQuote,
+      articleType: analysis?.articleType ?? article.articleType,
+    }));
+
+    // Table-of-contents strip (themes without one return "")
+    const tocEntries = article.sections
+      .filter((s) => s.heading)
+      .map((s, i) => ({
+        num: String(i + 1).padStart(2, "0"),
+        heading: s.heading,
+        englishTag: s.englishTag || "",
+      }));
+    if (tocEntries.length > 0) {
+      parts.push(theme.renderToc(tocEntries));
+    }
+
     // Article title (optional — WeChat has its own title)
     if (options.showTitle && article.title && article.title !== '无标题') {
       parts.push(`<h1 data-fs="title" style="font-size:22px;font-weight:900;color:${colors.title};text-align:center;margin:20px 10px 24px;line-height:1.4;"><span leaf="">${article.title}</span></h1>`);

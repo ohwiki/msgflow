@@ -5,7 +5,7 @@
  * Each theme encapsulates WeChat-compatible inline-style HTML templates.
  */
 
-import type { ITheme, ThemeColors, ThemeMeta, InlineSegment } from "../types.js";
+import type { ITheme, ThemeColors, ThemeMeta, InlineSegment, CoverOptions, TocEntry } from "../types.js";
 
 export abstract class BaseTheme implements ITheme {
   abstract readonly meta: ThemeMeta;
@@ -22,6 +22,14 @@ export abstract class BaseTheme implements ITheme {
 
   renderContainerClose(): string {
     return "</section>";
+  }
+
+  renderCover(_opts: CoverOptions): string {
+    return "";
+  }
+
+  renderToc(_entries: readonly TocEntry[]): string {
+    return "";
   }
 
   renderLeadQuote(quote: string, author?: string): string {

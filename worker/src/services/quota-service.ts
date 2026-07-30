@@ -13,6 +13,7 @@ import type { Logger } from "../lib/log.js";
 import type { QuotaKeyEntry, QuotaKeyInfo, QuotaResult, IQuotaClient } from "../types/quota.js";
 
 const MAX_CONCURRENT_KEYS = 10;
+const DAY_MS = 86_400_000;
 
 // ─── EasyClaude Client (implements IQuotaClient) ────────
 
@@ -148,7 +149,6 @@ function parseKeyInfo(raw: Record<string, unknown>): QuotaKeyInfo {
     remain_quota: Number(raw.remain_quota ?? 0),
     usage_percentage: raw.usage_percentage != null ? Number(raw.usage_percentage) : null,
     remaining_percentage: raw.remaining_percentage != null ? Number(raw.remaining_percentage) : null,
-    remaining_time: String(raw.remaining_time ?? ""),
     status: Number(raw.status ?? 0),
     created_time: String(raw.created_time ?? ""),
     expired_time: String(raw.expired_time ?? ""),
@@ -198,16 +198,15 @@ export function toCardViewModels(results: QuotaResult[]): QuotaCardViewModel[] {
     const pctNum = Math.min(100, Math.max(0, Math.round(pct)));
     const usagePct = 100 - pctNum;
 
-    // Days left
-    const daysMatch = (k.remaining_time || "").match(/[\d.]+/);
-    const daysLeft = daysMatch ? Math.round(parseFloat(daysMatch[0])) : NaN;
-
-    // Timeline progress
     const start = parseDateStr(k.created_time);
     const end = parseDateStr(k.expired_time);
     const now = Date.now();
+
+    // Ceil so a partial final day still reads as "1 天后到期" rather than "已到期".
+    const daysLeft = end == null ? NaN : Math.max(0, Math.ceil((end - now) / DAY_MS));
+
     let timelinePct = 50;
-    if (start && end && end > start) {
+    if (start != null && end != null && end > start) {
       timelinePct = Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)));
     }
     const timelineColor = timelinePct > 80 ? "#f87171" : timelinePct > 60 ? "#fbbf24" : "#3b82f6";
@@ -226,7 +225,7 @@ export function toCardViewModels(results: QuotaResult[]): QuotaCardViewModel[] {
       usagePct,
       quotaName: k.name || "—",
       daysLeft: isNaN(daysLeft) ? undefined : daysLeft,
-      isExpired: !isNaN(daysLeft) && daysLeft <= 0,
+      isExpired: !isNaN(daysLeft) && daysLeft === 0,
       daysWarning: !isNaN(daysLeft) && daysLeft > 0 && daysLeft <= 5,
       daysNormal: !isNaN(daysLeft) && daysLeft > 5,
       daysUnknown: isNaN(daysLeft),
@@ -248,8 +247,17 @@ export function formatDate(s: string): string {
   return `${d[0]}/${+(d[1] || 0)}/${+(d[2] || 0)} ${t}`;
 }
 
-function parseDateStr(s: string): number | null {
+/**
+ * Upstream sends wall-clock strings with no offset ("2026-07-30 23:59:59").
+ * Workers run in UTC, so they must be pinned to Beijing time explicitly.
+ */
+export function parseDateStr(s: string): number | null {
   if (!s) return null;
-  const t = Date.parse(s.replace(" ", "T"));
-  return isNaN(t) ? null : t;
+  const m = s.trim().match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})/);
+  if (!m) {
+    const loose = Date.parse(s);
+    return isNaN(loose) ? null : loose;
+  }
+  const n = (i: number) => Number(m[i]);
+  return Date.UTC(n(1), n(2) - 1, n(3), n(4) - 8, n(5), n(6));
 }

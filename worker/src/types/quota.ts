@@ -14,7 +14,6 @@ export interface QuotaKeyInfo {
   remain_quota: number;
   usage_percentage: number | null;
   remaining_percentage: number | null;
-  remaining_time: string;
   status: number;
   created_time: string;
   expired_time: string;

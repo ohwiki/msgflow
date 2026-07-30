@@ -177,6 +177,7 @@ export interface QuotaCardViewModel {
   // timeline
   daysLeft?: number;
   isExpired?: boolean;
+  daysToday?: boolean;
   daysWarning?: boolean;
   daysNormal?: boolean;
   daysUnknown?: boolean;
@@ -202,8 +203,10 @@ export function toCardViewModels(results: QuotaResult[]): QuotaCardViewModel[] {
     const end = parseDateStr(k.expired_time);
     const now = Date.now();
 
-    // Ceil so a partial final day still reads as "1 天后到期" rather than "已到期".
-    const daysLeft = end == null ? NaN : Math.max(0, Math.ceil((end - now) / DAY_MS));
+    // Calendar-day difference, not elapsed 24h blocks: an expiry tonight and one
+    // tomorrow afternoon are both <24h away but must read "今天" vs "1 天".
+    const daysLeft = end == null ? NaN : beijingDayIndex(end) - beijingDayIndex(now);
+    const expired = end != null && end <= now;
 
     let timelinePct = 50;
     if (start != null && end != null && end > start) {
@@ -224,10 +227,11 @@ export function toCardViewModels(results: QuotaResult[]): QuotaCardViewModel[] {
       pctNum,
       usagePct,
       quotaName: k.name || "—",
-      daysLeft: isNaN(daysLeft) ? undefined : daysLeft,
-      isExpired: !isNaN(daysLeft) && daysLeft === 0,
-      daysWarning: !isNaN(daysLeft) && daysLeft > 0 && daysLeft <= 5,
-      daysNormal: !isNaN(daysLeft) && daysLeft > 5,
+      daysLeft: isNaN(daysLeft) ? undefined : Math.max(0, daysLeft),
+      isExpired: expired,
+      daysToday: !expired && !isNaN(daysLeft) && daysLeft <= 0,
+      daysWarning: !expired && daysLeft >= 1 && daysLeft <= 5,
+      daysNormal: !expired && daysLeft > 5,
       daysUnknown: isNaN(daysLeft),
       timelinePct,
       timelineColor,
@@ -245,6 +249,11 @@ export function formatDate(s: string): string {
   const t = parts[1] || "00:00:00";
   if (d.length !== 3) return s;
   return `${d[0]}/${+(d[1] || 0)}/${+(d[2] || 0)} ${t}`;
+}
+
+/** Day number of an instant in Beijing time — lets two instants be compared by calendar date. */
+function beijingDayIndex(ms: number): number {
+  return Math.floor((ms + 8 * 3600_000) / DAY_MS);
 }
 
 /**

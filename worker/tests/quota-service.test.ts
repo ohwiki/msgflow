@@ -42,17 +42,32 @@ describe("toCardViewModels timeline", () => {
     vi.useRealTimers();
   });
 
-  it("derives daysLeft from expired_time, not upstream text", () => {
+  it("reads an expiry later today as 今天到期, not 1 天", () => {
     const [vm] = toCardViewModels([result("2026-05-29 18:17:33", "2026-07-30 23:59:59")]);
-    expect(vm.daysLeft).toBe(1);
+    expect(vm.daysToday).toBe(true);
+    expect(vm.daysWarning).toBe(false);
     expect(vm.isExpired).toBe(false);
-    expect(vm.daysWarning).toBe(true);
+  });
+
+  it("distinguishes tomorrow from later today even when both are under 24h away", () => {
+    const today = toCardViewModels([result("2026-07-01 00:00:00", "2026-07-30 23:59:59")])[0]!;
+    const tomorrow = toCardViewModels([result("2026-07-01 15:33:15", "2026-07-31 15:33:15")])[0]!;
+    expect(today.daysToday).toBe(true);
+    expect(tomorrow.daysLeft).toBe(1);
+    expect(tomorrow.daysToday).toBe(false);
   });
 
   it("marks a past expiry as expired", () => {
     const [vm] = toCardViewModels([result("2026-05-29 18:17:33", "2026-07-29 23:59:59")]);
-    expect(vm.daysLeft).toBe(0);
     expect(vm.isExpired).toBe(true);
+    expect(vm.daysToday).toBe(false);
+    expect(vm.daysLeft).toBe(0);
+  });
+
+  it("counts full calendar days for a distant expiry", () => {
+    const [vm] = toCardViewModels([result("2026-07-01 00:00:00", "2026-08-09 10:00:00")]);
+    expect(vm.daysLeft).toBe(10);
+    expect(vm.daysNormal).toBe(true);
   });
 
   it("computes timeline progress across the service window", () => {

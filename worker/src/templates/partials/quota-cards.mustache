@@ -60,6 +60,7 @@
           <span class="text-sm opacity-70">服务周期</span>
           <div class="flex items-baseline gap-1 text-sm">
             {{#isExpired}}<span class="text-error font-bold">已到期</span>{{/isExpired}}
+            {{#daysToday}}<span class="text-error font-bold">今天到期</span>{{/daysToday}}
             {{#daysWarning}}<span class="font-mono font-bold text-base text-error">{{daysLeft}}</span><span class="opacity-60 ml-0.5">天后到期</span>{{/daysWarning}}
             {{#daysNormal}}<span class="font-mono font-bold text-base">{{daysLeft}}</span><span class="opacity-60 ml-0.5">天后到期</span>{{/daysNormal}}
             {{#daysUnknown}}<span class="opacity-50">—</span>{{/daysUnknown}}

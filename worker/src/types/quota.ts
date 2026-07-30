@@ -17,6 +17,9 @@ export interface QuotaKeyInfo {
   status: number;
   created_time: string;
   expired_time: string;
+  key_flag: string;
+  group: string;
+  upstream_id: string;
 }
 
 export interface QuotaResult {

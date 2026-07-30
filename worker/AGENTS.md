@@ -227,10 +227,13 @@ return Mustache.render(tpl, viewModel);
 ### 参考实现
 
 `quota` 模块是 Mustache 模板模式的标准示例：
-- `handlers/quota-check.ts`：77 行，纯 HTTP 层
-- `services/quota-service.ts`：业务 + `toCardViewModels()` 视图模型转换
+- `handlers/quota-check.ts`：纯 HTTP 层（列表页 + HTMX 片段 + 详情页）
+- `services/quota-service.ts`：业务 + 三个视图模型转换函数
+  （`toRowViewModels()` 列表行、`toDetailViewModel()` 详情、`toCardViewModels()` 手动查询整卡）
 - `templates/partials/quota.mustache`：页面骨架
-- `templates/partials/quota-cards.mustache`：HTMX 片段（数据驱动卡片）
+- `templates/partials/quota-rows.mustache`：HTMX 片段（紧凑列表行，链到详情页）
+- `templates/partials/quota-detail.mustache`：详情页内容
+- `templates/partials/quota-cards.mustache`：HTMX 片段（手动查询用整卡）
 
 ## 测试规范
 

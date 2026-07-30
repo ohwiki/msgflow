@@ -12,7 +12,8 @@ import { AppError } from "../lib/errors.js";
 import type { Logger } from "../lib/log.js";
 import type { QuotaKeyEntry, QuotaKeyInfo, QuotaResult, IQuotaClient } from "../types/quota.js";
 
-const MAX_CONCURRENT_KEYS = 10;
+/** In-flight upstream requests. Not a cap on key count — all keys are queried, in batches. */
+const QUERY_CONCURRENCY = 6;
 const DAY_MS = 86_400_000;
 
 // ─── EasyClaude Client (implements IQuotaClient) ────────
@@ -79,11 +80,23 @@ export class QuotaService {
     }
   }
 
-  /** Query multiple keys concurrently (capped at MAX_CONCURRENT_KEYS). */
+  /**
+   * Query every key, at most QUERY_CONCURRENCY in flight at a time.
+   * Results keep the input order regardless of which request settles first.
+   */
   async queryAll(entries: QuotaKeyEntry[]): Promise<QuotaResult[]> {
-    const batch = entries.slice(0, MAX_CONCURRENT_KEYS);
-    this.log.info("quota_query_batch", { count: String(batch.length) });
-    return Promise.all(batch.map((entry) => this.queryOne(entry)));
+    this.log.info("quota_query_batch", { count: String(entries.length) });
+    const results = new Array<QuotaResult>(entries.length);
+    let next = 0;
+    const worker = async () => {
+      while (next < entries.length) {
+        const i = next++;
+        results[i] = await this.queryOne(entries[i]!);
+      }
+    };
+    const size = Math.min(QUERY_CONCURRENCY, entries.length);
+    await Promise.all(Array.from({ length: size }, worker));
+    return results;
   }
 }
 
@@ -152,6 +165,9 @@ function parseKeyInfo(raw: Record<string, unknown>): QuotaKeyInfo {
     status: Number(raw.status ?? 0),
     created_time: String(raw.created_time ?? ""),
     expired_time: String(raw.expired_time ?? ""),
+    key_flag: String(raw.key_flag ?? ""),
+    group: String(raw.group ?? ""),
+    upstream_id: String(raw.id ?? ""),
   };
 }
 
@@ -187,52 +203,125 @@ export interface QuotaCardViewModel {
 
 /** Transform raw QuotaResult[] into view models ready for Mustache. */
 export function toCardViewModels(results: QuotaResult[]): QuotaCardViewModel[] {
+  return results.map(toCardViewModel);
+}
+
+function toCardViewModel(r: QuotaResult): QuotaCardViewModel {
+  if (!r.ok) {
+    return { label: r.label, masked: r.masked, rawKey: r.rawKey, ok: false, info: r.info || "查询失败" };
+  }
+
+  const k = r.key_info!;
+  const pct = k.remaining_percentage ?? (k.total_quota > 0 ? (k.remain_quota / k.total_quota) * 100 : 0);
+  const pctNum = Math.min(100, Math.max(0, Math.round(pct)));
+  const usagePct = 100 - pctNum;
+
+  const start = parseDateStr(k.created_time);
+  const end = parseDateStr(k.expired_time);
+  const now = Date.now();
+
+  const remainMs = end == null ? NaN : end - now;
+  const expired = !isNaN(remainMs) && remainMs <= 0;
+
+  let timelinePct = 50;
+  if (start != null && end != null && end > start) {
+    timelinePct = Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)));
+  }
+  const timelineColor = timelinePct > 80 ? "#f87171" : timelinePct > 60 ? "#fbbf24" : "#3b82f6";
+
+  return {
+    label: r.label,
+    masked: r.masked,
+    rawKey: r.rawKey,
+    ok: true,
+    statusOk: k.status === 1,
+    remainShort: k.remain_quota.toFixed(1),
+    remainFull: k.remain_quota.toFixed(2),
+    usedFull: k.used_quota.toFixed(2),
+    totalFull: k.total_quota.toFixed(2),
+    pctNum,
+    usagePct,
+    quotaName: k.name || "—",
+    remainText: isNaN(remainMs) ? undefined : formatRemaining(remainMs),
+    isExpired: expired,
+    isUrgent: !expired && remainMs < 5 * DAY_MS,
+    daysUnknown: isNaN(remainMs),
+    timelinePct,
+    timelineColor,
+    createdFmt: formatDate(k.created_time),
+    expiredFmt: formatDate(k.expired_time),
+  };
+}
+
+// ─── List rows ──────────────────────────────────────────
+
+export interface QuotaRowViewModel {
+  id: string;
+  label: string;
+  masked: string;
+  rawKey: string;
+  ok: boolean;
+  info?: string;
+  statusOk?: boolean;
+  pctNum?: number;
+  pctColor?: string;
+  remainFull?: string;
+  totalFull?: string;
+  remainText?: string;
+  isExpired?: boolean;
+  isUrgent?: boolean;
+  daysUnknown?: boolean;
+}
+
+/** Compact one-row-per-key models for the list page. */
+export function toRowViewModels(results: QuotaResult[]): QuotaRowViewModel[] {
   return results.map((r) => {
-    if (!r.ok) {
-      return { label: r.label, masked: r.masked, rawKey: r.rawKey, ok: false, info: r.info || "查询失败" };
-    }
-
-    const k = r.key_info!;
-    const pct = k.remaining_percentage ?? (k.total_quota > 0 ? (k.remain_quota / k.total_quota) * 100 : 0);
-    const pctNum = Math.min(100, Math.max(0, Math.round(pct)));
-    const usagePct = 100 - pctNum;
-
-    const start = parseDateStr(k.created_time);
-    const end = parseDateStr(k.expired_time);
-    const now = Date.now();
-
-    const remainMs = end == null ? NaN : end - now;
-    const expired = !isNaN(remainMs) && remainMs <= 0;
-
-    let timelinePct = 50;
-    if (start != null && end != null && end > start) {
-      timelinePct = Math.min(100, Math.max(0, Math.round(((now - start) / (end - start)) * 100)));
-    }
-    const timelineColor = timelinePct > 80 ? "#f87171" : timelinePct > 60 ? "#fbbf24" : "#3b82f6";
-
+    const c = toCardViewModel(r);
     return {
-      label: r.label,
-      masked: r.masked,
-      rawKey: r.rawKey,
-      ok: true,
-      statusOk: k.status === 1,
-      remainShort: k.remain_quota.toFixed(1),
-      remainFull: k.remain_quota.toFixed(2),
-      usedFull: k.used_quota.toFixed(2),
-      totalFull: k.total_quota.toFixed(2),
-      pctNum,
-      usagePct,
-      quotaName: k.name || "—",
-      remainText: isNaN(remainMs) ? undefined : formatRemaining(remainMs),
-      isExpired: expired,
-      isUrgent: !expired && remainMs < 5 * DAY_MS,
-      daysUnknown: isNaN(remainMs),
-      timelinePct,
-      timelineColor,
-      createdFmt: formatDate(k.created_time),
-      expiredFmt: formatDate(k.expired_time),
+      id: keyId(r.rawKey),
+      label: c.label,
+      masked: c.masked,
+      rawKey: c.rawKey,
+      ok: c.ok,
+      info: c.info,
+      statusOk: c.statusOk,
+      pctNum: c.pctNum,
+      pctColor: c.pctNum == null ? undefined : quotaColor(c.pctNum),
+      remainFull: c.remainFull,
+      totalFull: c.totalFull,
+      remainText: c.remainText,
+      isExpired: c.isExpired,
+      isUrgent: c.isUrgent,
+      daysUnknown: c.daysUnknown,
     };
   });
+}
+
+/** Bar colour by remaining quota — mirrors the timelineColor convention. */
+function quotaColor(pctNum: number): string {
+  return pctNum <= 10 ? "#f87171" : pctNum <= 30 ? "#fbbf24" : "#3b82f6";
+}
+
+// ─── Detail page ────────────────────────────────────────
+
+export interface QuotaDetailViewModel extends QuotaCardViewModel {
+  id: string;
+  keyFlag?: string;
+  group?: string;
+  upstreamId?: string;
+}
+
+/** Full model for the detail page: everything on the card plus upstream metadata. */
+export function toDetailViewModel(r: QuotaResult): QuotaDetailViewModel {
+  const c = toCardViewModel(r);
+  const k = r.key_info;
+  return {
+    ...c,
+    id: keyId(r.rawKey),
+    keyFlag: k?.key_flag || "—",
+    group: k?.group || "—",
+    upstreamId: k?.upstream_id || "—",
+  };
 }
 
 /** Format "2026-07-02 18:17:33" → "2026/7/2 18:17:33" */
@@ -243,6 +332,20 @@ export function formatDate(s: string): string {
   const t = parts[1] || "00:00:00";
   if (d.length !== 3) return s;
   return `${d[0]}/${+(d[1] || 0)}/${+(d[2] || 0)} ${t}`;
+}
+
+/**
+ * Stable short handle for a key, used as the detail-page URL segment.
+ * FNV-1a-32 — synchronous by design, since the view-model layer is sync.
+ * Not a secret and not a capability: the route sits behind authMiddleware.
+ */
+export function keyId(key: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < key.length; i++) {
+    h ^= key.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(16).padStart(8, "0");
 }
 
 /** Remaining duration as "3 天 5 小时" / "7 小时" / "42 分钟". Floors, so it never overstates. */

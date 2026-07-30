@@ -23,7 +23,7 @@ import { pageArticlePreview } from "./handlers/article-preview.js";
 import { apiNotePublish, apiNoteUpdateCookie } from "./handlers/api-note.js";
 import { pageHome, pageFetch, pageNote } from "./views/admin.js";
 import { pageDomain, apiDomainCheck } from "./handlers/domain-check.js";
-import { pageQuota, apiQuotaCheck } from "./handlers/quota-check.js";
+import { pageQuota, apiQuotaCheck, pageQuotaDetail } from "./handlers/quota-check.js";
 import { apiFormat, apiThemes, pageFormat, apiFormatDebug } from "./handlers/api-format.js";
 import { apiFormatHistory, apiFormatHistoryGet, apiFormatHistoryDelete, apiFormatHistoryPatch } from "./handlers/api-format-history.js";
 import {
@@ -150,6 +150,8 @@ export async function router(
     if (method === "DELETE") return apiFormatHistoryDelete(request, env, log);
     if (method === "PATCH") return apiFormatHistoryPatch(request, env, log);
   }
+
+  if (method === "GET" && path.match(/^\/quota\/[^/]+$/)) return pageQuotaDetail(request, env, log);
 
   // RSS — dynamic :id routes
   if (method === "POST" && path.match(/^\/api\/rss\/articles\/[^/]+\/read$/)) return apiRssArticleRead(request, env, log);

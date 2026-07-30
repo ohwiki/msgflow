@@ -13,10 +13,12 @@ import { Res } from "../lib/response.js";
 import { CDN, BASE_TEMPLATE_VARS } from "../lib/constants.js";
 import type { Logger } from "../lib/log.js";
 import type { QuotaKeyEntry } from "../types/quota.js";
-import { QuotaService, EasyClaudeClient, toCardViewModels } from "../services/quota-service.js";
+import { QuotaService, EasyClaudeClient, toCardViewModels, toRowViewModels, toDetailViewModel, keyId } from "../services/quota-service.js";
 import layoutTpl from "../templates/layout.mustache";
 import quotaTpl from "../templates/partials/quota.mustache";
 import quotaCardsTpl from "../templates/partials/quota-cards.mustache";
+import quotaRowsTpl from "../templates/partials/quota-rows.mustache";
+import quotaDetailTpl from "../templates/partials/quota-detail.mustache";
 
 const KV_KEY_EASYCLAUDE = "easyclaude_keys";
 
@@ -38,24 +40,34 @@ export async function apiQuotaCheck(request: Request, env: Env, log: Logger): Pr
   const mode = (form.get("mode") as string) || "manual";
 
   const service = new QuotaService(new EasyClaudeClient(), log);
-  let entries: QuotaKeyEntry[];
 
+  // Saved keys render as compact rows linking to /quota/:id.
   if (mode === "saved") {
-    entries = await loadKeys(env);
-    if (!entries.length) {
-      return Res.html(Mustache.render(quotaCardsTpl, { hasResults: false }));
-    }
-  } else {
-    const apiKey = ((form.get("api_key") as string) || "").trim();
-    if (!apiKey) {
-      return Res.html(`<div class="alert alert-error">请输入 API Key</div>`);
-    }
-    entries = [{ label: "手动查询", key: apiKey }];
+    const entries = await loadKeys(env);
+    const rows = toRowViewModels(await service.queryAll(entries));
+    return Res.html(Mustache.render(quotaRowsTpl, { hasResults: rows.length > 0, results: rows }));
   }
 
-  const results = await service.queryAll(entries);
-  const viewModels = toCardViewModels(results);
-  const html = Mustache.render(quotaCardsTpl, { hasResults: viewModels.length > 0, results: viewModels });
+  // A manually typed key isn't in KV, so it has no detail route — render the full card.
+  const apiKey = ((form.get("api_key") as string) || "").trim();
+  if (!apiKey) {
+    return Res.html(`<div class="alert alert-error">请输入 API Key</div>`);
+  }
+  const cards = toCardViewModels(await service.queryAll([{ label: "手动查询", key: apiKey }]));
+  return Res.html(Mustache.render(quotaCardsTpl, { hasResults: cards.length > 0, results: cards }));
+}
+
+// ─── Detail Page ────────────────────────────────────────
+
+export async function pageQuotaDetail(request: Request, env: Env, log: Logger): Promise<Response> {
+  const id = new URL(request.url).pathname.split("/").pop() ?? "";
+  const entry = (await loadKeys(env)).find((e) => keyId(e.key) === id);
+  if (!entry) return Res.notFound();
+
+  const service = new QuotaService(new EasyClaudeClient(), log);
+  const vm = toDetailViewModel(await service.queryOne(entry));
+  const content = Mustache.render(quotaDetailTpl, vm);
+  const html = Mustache.render(layoutTpl, { ...baseVars, title: `额度详情 · ${entry.label}`, content });
   return Res.html(html);
 }
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { toCardViewModels, parseDateStr, formatDate } from "../src/services/quota-service.js";
+import { toCardViewModels, parseDateStr, formatDate, formatRemaining } from "../src/services/quota-service.js";
 import type { QuotaResult } from "../src/types/quota.js";
 
 function result(created: string, expired: string): QuotaResult {
@@ -42,32 +42,30 @@ describe("toCardViewModels timeline", () => {
     vi.useRealTimers();
   });
 
-  it("reads an expiry later today as 今天到期, not 1 天", () => {
+  it("shows hours only when under a day away", () => {
     const [vm] = toCardViewModels([result("2026-05-29 18:17:33", "2026-07-30 23:59:59")]);
-    expect(vm.daysToday).toBe(true);
-    expect(vm.daysWarning).toBe(false);
+    expect(vm.remainText).toBe("8 小时");
     expect(vm.isExpired).toBe(false);
+    expect(vm.isUrgent).toBe(true);
   });
 
-  it("distinguishes tomorrow from later today even when both are under 24h away", () => {
-    const today = toCardViewModels([result("2026-07-01 00:00:00", "2026-07-30 23:59:59")])[0]!;
+  it("distinguishes two sub-24h expiries that previously both read 1 天", () => {
+    const tonight = toCardViewModels([result("2026-07-01 00:00:00", "2026-07-30 23:59:59")])[0]!;
     const tomorrow = toCardViewModels([result("2026-07-01 15:33:15", "2026-07-31 15:33:15")])[0]!;
-    expect(today.daysToday).toBe(true);
-    expect(tomorrow.daysLeft).toBe(1);
-    expect(tomorrow.daysToday).toBe(false);
+    expect(tonight.remainText).toBe("8 小时");
+    expect(tomorrow.remainText).toBe("23 小时");
+  });
+
+  it("shows days and hours together for a distant expiry", () => {
+    const [vm] = toCardViewModels([result("2026-07-01 00:00:00", "2026-08-09 10:00:00")]);
+    expect(vm.remainText).toBe("9 天 18 小时");
+    expect(vm.isUrgent).toBe(false);
   });
 
   it("marks a past expiry as expired", () => {
     const [vm] = toCardViewModels([result("2026-05-29 18:17:33", "2026-07-29 23:59:59")]);
     expect(vm.isExpired).toBe(true);
-    expect(vm.daysToday).toBe(false);
-    expect(vm.daysLeft).toBe(0);
-  });
-
-  it("counts full calendar days for a distant expiry", () => {
-    const [vm] = toCardViewModels([result("2026-07-01 00:00:00", "2026-08-09 10:00:00")]);
-    expect(vm.daysLeft).toBe(10);
-    expect(vm.daysNormal).toBe(true);
+    expect(vm.remainText).toBe("已到期");
   });
 
   it("computes timeline progress across the service window", () => {
@@ -75,10 +73,32 @@ describe("toCardViewModels timeline", () => {
     expect(vm.timelinePct).toBe(99);
   });
 
+  it("omits the hours part when it lands exactly on a day", () => {
+    const [vm] = toCardViewModels([result("2026-07-01 15:37:00", "2026-08-02 15:37:00")]);
+    expect(vm.remainText).toBe("3 天");
+  });
+
   it("flags unknown timeline when expiry is missing", () => {
     const [vm] = toCardViewModels([result("2026-05-29 18:17:33", "")]);
     expect(vm.daysUnknown).toBe(true);
     expect(vm.daysLeft).toBeUndefined();
+  });
+});
+
+describe("formatRemaining", () => {
+  const MIN = 60_000, HOUR = 60 * MIN, DAY = 24 * HOUR;
+
+  it("falls back to minutes under an hour", () => {
+    expect(formatRemaining(42 * MIN)).toBe("42 分钟");
+  });
+
+  it("floors rather than rounding up", () => {
+    expect(formatRemaining(2 * DAY + 5 * HOUR + 59 * MIN)).toBe("2 天 5 小时");
+  });
+
+  it("reports expiry for non-positive input", () => {
+    expect(formatRemaining(0)).toBe("已到期");
+    expect(formatRemaining(-HOUR)).toBe("已到期");
   });
 });
 

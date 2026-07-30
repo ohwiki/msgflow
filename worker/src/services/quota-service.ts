@@ -175,11 +175,9 @@ export interface QuotaCardViewModel {
   usagePct?: number;
   quotaName?: string;
   // timeline
-  daysLeft?: number;
+  remainText?: string;
   isExpired?: boolean;
-  daysToday?: boolean;
-  daysWarning?: boolean;
-  daysNormal?: boolean;
+  isUrgent?: boolean;
   daysUnknown?: boolean;
   timelinePct?: number;
   timelineColor?: string;
@@ -203,10 +201,8 @@ export function toCardViewModels(results: QuotaResult[]): QuotaCardViewModel[] {
     const end = parseDateStr(k.expired_time);
     const now = Date.now();
 
-    // Calendar-day difference, not elapsed 24h blocks: an expiry tonight and one
-    // tomorrow afternoon are both <24h away but must read "今天" vs "1 天".
-    const daysLeft = end == null ? NaN : beijingDayIndex(end) - beijingDayIndex(now);
-    const expired = end != null && end <= now;
+    const remainMs = end == null ? NaN : end - now;
+    const expired = !isNaN(remainMs) && remainMs <= 0;
 
     let timelinePct = 50;
     if (start != null && end != null && end > start) {
@@ -227,12 +223,10 @@ export function toCardViewModels(results: QuotaResult[]): QuotaCardViewModel[] {
       pctNum,
       usagePct,
       quotaName: k.name || "—",
-      daysLeft: isNaN(daysLeft) ? undefined : Math.max(0, daysLeft),
+      remainText: isNaN(remainMs) ? undefined : formatRemaining(remainMs),
       isExpired: expired,
-      daysToday: !expired && !isNaN(daysLeft) && daysLeft <= 0,
-      daysWarning: !expired && daysLeft >= 1 && daysLeft <= 5,
-      daysNormal: !expired && daysLeft > 5,
-      daysUnknown: isNaN(daysLeft),
+      isUrgent: !expired && remainMs < 5 * DAY_MS,
+      daysUnknown: isNaN(remainMs),
       timelinePct,
       timelineColor,
       createdFmt: formatDate(k.created_time),
@@ -251,9 +245,15 @@ export function formatDate(s: string): string {
   return `${d[0]}/${+(d[1] || 0)}/${+(d[2] || 0)} ${t}`;
 }
 
-/** Day number of an instant in Beijing time — lets two instants be compared by calendar date. */
-function beijingDayIndex(ms: number): number {
-  return Math.floor((ms + 8 * 3600_000) / DAY_MS);
+/** Remaining duration as "3 天 5 小时" / "7 小时" / "42 分钟". Floors, so it never overstates. */
+export function formatRemaining(ms: number): string {
+  if (ms <= 0) return "已到期";
+  const totalMin = Math.floor(ms / 60_000);
+  const days = Math.floor(totalMin / 1440);
+  const hours = Math.floor((totalMin % 1440) / 60);
+  if (days > 0) return hours > 0 ? `${days} 天 ${hours} 小时` : `${days} 天`;
+  if (hours > 0) return `${hours} 小时`;
+  return `${totalMin} 分钟`;
 }
 
 /**

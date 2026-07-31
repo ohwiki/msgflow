@@ -124,3 +124,6 @@ CREATE TABLE articles (
 4. **为什么 R2 存文件不用 D1 BLOB**：D1 单行 1MB 限制，R2 无限制且有 CDN
 5. **为什么 Actions 做重型任务**：Worker CPU 30s 限制，Prettier/AI 调用可能数分钟
 6. **为什么 KV 存配置不用 D1**：配置是 key-value 模式，KV 读延迟 <1ms，无需 SQL 查询
+7. **CDN 版 Tailwind 的已知代价**：`@tailwindcss/browser` 只扫描标记中的 utility 类，
+   不会为 daisyUI 组件类生成响应式变体（如 `lg:drawer-open`），需手写等价规则。
+   详见 [frontend-pitfalls.md](frontend-pitfalls.md)

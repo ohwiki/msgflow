@@ -4,6 +4,7 @@
 docs/
 ├── architecture/          ← 技术选型、系统设计、交互流程
 │   ├── architecture-decisions.md
+│   ├── frontend-pitfalls.md
 │   ├── worker-architecture.md
 │   ├── worker-github-interaction.md
 │   └── notification-strategy.md
@@ -30,6 +31,7 @@ docs/
 | 文档 | 说明 |
 |------|------|
 | [architecture-decisions.md](architecture/architecture-decisions.md) | 技术选型、存储设计、状态机、关键决策备忘 |
+| [frontend-pitfalls.md](architecture/frontend-pitfalls.md) | 前端踩坑与排查判据（CDN Tailwind 变体、可见性验证方法） |
 | [worker-architecture.md](architecture/worker-architecture.md) | Worker 多实例扩展规划 |
 | [worker-github-interaction.md](architecture/worker-github-interaction.md) | Worker ↔ GitHub Actions 交互流程 |
 | [notification-strategy.md](architecture/notification-strategy.md) | 为什么用 Worker 做消息中转 |

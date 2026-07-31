@@ -48,10 +48,12 @@ export const URL_PATTERN = {
 } as const;
 
 // ─── CDN Assets ─────────────────────────────────────────
+// Pin exact versions: floating tags (@5, @4) silently pull upstream releases into
+// production, and a style regression then looks like a change on our side.
 export const CDN = {
-  DAISYUI_CSS: "https://cdn.jsdelivr.net/npm/daisyui@5",
-  DAISYUI_THEMES: "https://cdn.jsdelivr.net/npm/daisyui@5/themes.css",
-  TAILWIND_BROWSER: "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4",
+  DAISYUI_CSS: "https://cdn.jsdelivr.net/npm/daisyui@5.7.9",
+  DAISYUI_THEMES: "https://cdn.jsdelivr.net/npm/daisyui@5.7.9/themes.css",
+  TAILWIND_BROWSER: "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3",
   HTMX: "https://unpkg.com/htmx.org@2.0.4",
 } as const;
 

@@ -16,8 +16,8 @@
 | 层 | 选型 | 决策理由 |
 |---|------|---------|
 | 语言 | TypeScript (strict) | 类型安全、Worker 原生支持 |
-| CSS | Tailwind CSS 4 (CDN) | 零构建、实用类优先 |
-| 组件库 | daisyUI 5 (CDN) | 语义化 class，减少 class 堆叠 |
+| CSS | Tailwind CSS 4 (CDN, 运行时版) | 零构建、实用类优先。代价见 [frontend-pitfalls.md](frontend-pitfalls.md) |
+| 组件库 | daisyUI 5 (CDN) | 语义化 class，减少 class 堆叠。官方推荐 npm 依赖，CDN 为次选 |
 | 模板 | Mustache (.mustache 文件) | 逻辑与视图分离，auto-escape 防 XSS |
 | 交互 | HTMX 2.0 (CDN) | 声明式，无需前端框架 |
 | 构建 | wrangler (esbuild) | TS → 单文件 bundle |

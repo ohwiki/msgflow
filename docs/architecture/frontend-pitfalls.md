@@ -25,6 +25,30 @@
 **不会为 daisyUI 的组件类生成变体**。daisyUI 自带的 `.lg\:drawer-open` 规则包在
 `@layer` 内，优先级低于无层的运行时样式，因此不生效。
 
+**本可以更早发现**：daisyUI 官方 skill（`npx skills add saadeghi/daisyui`，
+装在 `~/.claude/skills/daisyui/SKILL.md`）第 23 条已经给出定位：
+
+> daisyUI is **suggested to be installed as a dependency** but
+> **if you really want to use it from CDN**, you can use ... CDN files
+
+官方把 CDN 明确列为次选方案，推荐 npm 依赖 + `@plugin "daisyui"`。
+这个措辞就是警示信号 —— 遇到样式类问题时，**先读已安装的库 skill**，
+比直接上浏览器猜测更快。本次排查跳过了这一步，多绕了三条弯路。
+
+同一份 skill 第 568 行还区分了两个概念，值得记住：
+
+```
+- modifier: `drawer-open`
+- variant:  `is-drawer-open:`, `is-drawer-close:`
+```
+
+`drawer-open` 是 **modifier**（daisyUI 自己的修饰类），
+`is-drawer-open:` 才是 **variant**（daisyUI 提供的变体前缀）。
+而 `lg:drawer-open` 是给 modifier 套 **Tailwind 的**响应式前缀 ——
+这类用法需要 Tailwind 在构建期参与，运行时版做不到。
+注意 skill 第 592 行仍照常给出 `lg:drawer-open` 示例，并未标注 CDN 模式下失效，
+所以 skill 能指出方向，但因果链仍需实测确认。
+
 **判据**：不要绕着外围猜，直接在真实页面上替换类名做对照：
 
 ```js
@@ -44,13 +68,47 @@ document.body.appendChild(b);
 getComputedStyle(b).backgroundColor;  // 有主题色 → daisyUI 正常
 ```
 
-**现行修复**：在 `worker/src/templates/layout.mustache` 内联等价规则，
+**现行修复（权宜）**：在 `worker/src/templates/layout.mustache` 内联等价规则，
 只在 `min-width: 1024px` 生效，不依赖 Tailwind 生成变体。
 
-**根治方案（尚未采用）**：改用官方 `@plugin "daisyui"` 引入方式，
-让 daisyUI 走 Tailwind 插件管线，所有变体都能正常生成。
-代价是改动 CDN 引入结构、影响全站样式。
-若以后再遇到别的 `lg:` / `md:` 前缀配 daisyUI 组件类失效，就该做这个迁移。
+这是**权宜之计，不是终局**。它的维护负担会累积：今后每一个
+「Tailwind 响应式前缀 + daisyUI 组件类」的需求（`md:drawer-open`、
+`lg:modal-open` 等）都要在 layout 里手写一遍覆盖规则，
+而且手写规则必须跟着 daisyUI 升级同步维护，否则会与上游实现悄悄分叉。
+
+### 建议的迁移方向
+
+改用官方推荐方式：`daisyui` 装成 npm 依赖，CSS 里 `@plugin "daisyui"`，
+构建期由 Tailwind 生成完整 CSS（含所有变体），产物随 worker 一起部署。
+
+收益：
+
+- 所有 Tailwind 变体正常工作，不需要任何手写覆盖规则
+- 去掉两个 CDN 往返，首屏更快，也不再受第三方 CDN 可用性影响
+- 只产出实际用到的 CSS，当前 CDN 版 daisyUI 是 1.1MB 全量
+
+代价：
+
+- 引入 CSS 构建步骤。项目已有 `build:client`（esbuild 打包客户端脚本，
+  见 `worker/package.json`），CSS 构建可挂在同一处，不算新增体系
+- `docs/architecture/architecture-decisions.md` 的技术栈表把
+  Tailwind/daisyUI 标为「零构建」，迁移后需同步修正该表述
+- 需回归全站样式，因为产物 CSS 与 CDN 全量版的层叠顺序可能有差异
+
+触发时机：再出现第二个变体失效的场景，或首屏性能成为问题时，就该做。
+只为当前这一处而迁移不划算，但**不要在 layout 里继续堆第三条、第四条覆盖规则** ——
+那时就该迁移，而不是继续打补丁。
+
+### 版本锁定
+
+`worker/src/lib/constants.ts` 里的 CDN URL 已从浮动标签
+（`daisyui@5`、`@tailwindcss/browser@4`）改为固定版本
+（`daisyui@5.7.9`、`@tailwindcss/browser@4.3.3`）。
+
+浮动标签的问题不只是"可能引入回归"，更麻烦的是**它让归因变困难**：
+上游任何一次发版都会直接进生产，样式一旦出问题，看起来像是我们自己改坏的。
+本次排查中我正是因此误判为「daisyUI 5.7.9 版本回归」并做了无意义的版本二分。
+升级时手动改版本号，并按本文末尾的跨断点清单回归一遍。
 
 ## 2. `position: sticky` 让元素有几何盒但不被绘制
 
@@ -83,6 +141,10 @@ const stack = document.elementsFromPoint(
 
 ## 通用教训
 
+0. **先读已安装的库 skill / 官方文档，再动手实验**。
+   `~/.claude/skills/` 下装了什么先看一眼。本次 daisyUI skill 里
+   「CDN 是次选方案」这一句就能把排查方向从"猜我们代码哪写错了"
+   转到"CDN 模式本身的能力边界"，省掉三条弯路。
 1. **构造测试页会失真**。涉及运行时 CSS 生成（`@tailwindcss/browser`）时，
    `setContent()` / `file://` 与真实 http 页面的加载时序不同，结论不可迁移。
    要在**真实页面**上做对照实验。

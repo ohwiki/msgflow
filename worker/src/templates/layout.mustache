@@ -16,10 +16,14 @@
   <style>
     @media (min-width: 1024px) {
       .drawer.lg\:drawer-open > .drawer-toggle ~ .drawer-side {
-        position: sticky;
+        position: static;
+        display: block;
         visibility: visible;
+        opacity: 1;
         width: auto;
         overflow-y: auto;
+        pointer-events: auto;
+        overscroll-behavior: auto;
       }
       .drawer.lg\:drawer-open > .drawer-toggle ~ .drawer-side > :not(.drawer-overlay) { translate: 0%; }
       .drawer.lg\:drawer-open > .drawer-toggle ~ .drawer-side > .drawer-overlay { display: none; }

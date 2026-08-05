@@ -43,12 +43,7 @@
       </div>
     </div>
 
-    <!--
-      Query on first tab open, not page load. hx-trigger="revealed" doesn't work here:
-      a display:none panel has a zero rect, which passes htmx's in-viewport test.
-    -->
-    <input type="radio" name="quota_tab" class="tab" aria-label="Fenno"
-      {{#fnHasKeys}}hx-post="/api/fenno/check" hx-target="#fenno-result" hx-indicator="#fenno-loading" hx-trigger="change once"{{/fnHasKeys}} />
+    <input type="radio" name="quota_tab" class="tab" aria-label="Fenno" />
     <div class="tab-content border-base-300 bg-base-100 pt-3">
       <div class="flex flex-col gap-3">
         <div class="flex items-center justify-between">
@@ -69,7 +64,19 @@
         <div id="fenno-loading" class="htmx-indicator flex justify-center py-4">
           <span class="loading loading-spinner loading-md"></span>
         </div>
-        <div id="fenno-result" hx-swap="innerHTML"></div>
+        <div id="fenno-result" hx-swap="innerHTML">
+          {{#fnHasKeys}}
+          <!--
+            Query on first tab open, not page load. Two triggers that look right but aren't:
+            "revealed" fires immediately, because a display:none panel has a zero rect that
+            passes htmx's in-viewport test; "change once" on the radio strands the panel empty
+            after a back-navigation, since the browser restores the radio as already-checked
+            and clicking it again emits no change event. "intersect" uses IntersectionObserver,
+            which correctly reports a hidden panel as not intersecting.
+          -->
+          <div hx-post="/api/fenno/check" hx-target="#fenno-result" hx-indicator="#fenno-loading" hx-trigger="intersect once"></div>
+          {{/fnHasKeys}}
+        </div>
       </div>
     </div>
   </div>

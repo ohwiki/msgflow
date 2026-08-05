@@ -256,6 +256,7 @@ function toCardViewModel(r: QuotaResult): QuotaCardViewModel {
 // ─── List rows ──────────────────────────────────────────
 
 export interface QuotaRowViewModel {
+  provider: string;
   id: string;
   label: string;
   masked: string;
@@ -278,6 +279,7 @@ export function toRowViewModels(results: QuotaResult[]): QuotaRowViewModel[] {
   return results.map((r) => {
     const c = toCardViewModel(r);
     return {
+      provider: "easyclaude",
       id: keyId(r.rawKey),
       label: c.label,
       masked: c.masked,

@@ -19,7 +19,8 @@ export async function pageSettings(_request: Request, env: Env, _log: Logger): P
   const github_repo = await env.KV.get("github_repo") || "";
   const tavily_key = await env.KV.get("tavily_api_key") || "";
   const exa_key = await env.KV.get("exa_api_key") || "";
-  const easyclaude_keys_text = await getEasyClaudeKeysText(env);
+  const easyclaude_keys_text = await getKeysText(env, "easyclaude_keys");
+  const fenno_keys_text = await getKeysText(env, "fenno_keys");
   const ai_key = await env.KV.get("nullclaw_api_key") || "";
   const ai_base_url = await env.KV.get("nullclaw_base_url") || "";
   const ai_model = await env.KV.get("nullclaw_model") || "";
@@ -29,6 +30,7 @@ export async function pageSettings(_request: Request, env: Env, _log: Logger): P
     tavily_key_value: tavily_key,
     exa_key_value: exa_key,
     easyclaude_keys_text,
+    fenno_keys_text,
     ai_key_value: ai_key,
     ai_base_url_value: ai_base_url,
     ai_model_value: ai_model,
@@ -74,7 +76,23 @@ export async function handleSettingsSubmit(request: Request, env: Env, log: Logg
     const entries = parseKeysText(keysText);
     await env.KV.put("easyclaude_keys", JSON.stringify(entries));
     log.info("easyclaude_keys_saved", { count: String(entries.length) });
-    return renderSettings({ success: `EasyClaude Keys 已保存（${entries.length} 个）`, easyclaude_keys_text: keysText });
+    return renderSettings({
+      success: `EasyClaude Keys 已保存（${entries.length} 个）`,
+      easyclaude_keys_text: keysText,
+      fenno_keys_text: await getKeysText(env, "fenno_keys"),
+    });
+  }
+
+  if (action === "save_fenno_keys") {
+    const keysText = ((formData.get("fenno_keys") as string) || "").trim();
+    const entries = parseKeysText(keysText);
+    await env.KV.put("fenno_keys", JSON.stringify(entries));
+    log.info("fenno_keys_saved", { count: String(entries.length) });
+    return renderSettings({
+      success: `Fenno Keys 已保存（${entries.length} 个）`,
+      fenno_keys_text: keysText,
+      easyclaude_keys_text: await getKeysText(env, "easyclaude_keys"),
+    });
   }
 
   if (action === "save_ai_config") {
@@ -127,15 +145,15 @@ export async function handleSettingsSubmit(request: Request, env: Env, log: Logg
   return renderSettings({});
 }
 
-function renderSettings(data: { success?: string; error?: string; github_token_masked?: string; github_repo?: string; tavily_key_value?: string; exa_key_value?: string; easyclaude_keys_text?: string; ai_key_value?: string; ai_base_url_value?: string; ai_model_value?: string }): Response {
+function renderSettings(data: { success?: string; error?: string; github_token_masked?: string; github_repo?: string; tavily_key_value?: string; exa_key_value?: string; easyclaude_keys_text?: string; fenno_keys_text?: string; ai_key_value?: string; ai_base_url_value?: string; ai_model_value?: string }): Response {
   const content = Mustache.render(settingsTpl, data);
   const html = Mustache.render(layoutTpl, { ...baseVars, title: "设置", content });
   return Res.html(html);
 }
 
-/** 从 KV 读 easyclaude_keys JSON，转回文本格式供编辑 */
-async function getEasyClaudeKeysText(env: Env): Promise<string> {
-  const raw = await env.KV.get("easyclaude_keys");
+/** 从 KV 读 key 列表 JSON，转回文本格式供编辑 */
+async function getKeysText(env: Env, kvKey: string): Promise<string> {
+  const raw = await env.KV.get(kvKey);
   if (!raw) return "";
   try {
     return entriesToText(JSON.parse(raw));

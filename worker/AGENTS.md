@@ -227,13 +227,23 @@ return Mustache.render(tpl, viewModel);
 ### 参考实现
 
 `quota` 模块是 Mustache 模板模式的标准示例：
-- `handlers/quota-check.ts`：纯 HTTP 层（列表页 + HTMX 片段 + 详情页）
-- `services/quota-service.ts`：业务 + 三个视图模型转换函数
+- `handlers/quota-check.ts`：纯 HTTP 层（tab 页面 + HTMX 片段 + 按 provider 分派的详情页）
+- `services/quota-service.ts`：EasyClaude 业务 + 三个视图模型转换函数
   （`toRowViewModels()` 列表行、`toDetailViewModel()` 详情、`toCardViewModels()` 手动查询整卡）
-- `templates/partials/quota.mustache`：页面骨架
-- `templates/partials/quota-rows.mustache`：HTMX 片段（紧凑列表行，链到详情页）
-- `templates/partials/quota-detail.mustache`：详情页内容
+- `services/fenno-service.ts`：Fenno 业务 + `toFennoRowViewModels()` / `toFennoDetailViewModel()`
+- `templates/partials/quota.mustache`：页面骨架（daisyUI `tabs` + radio input）
+- `templates/partials/quota-rows.mustache`：HTMX 片段，**两个 provider 共用**
+  （行视图模型字段名保持兼容；`pctLabel` 用于标注百分比的周期口径）
+- `templates/partials/quota-detail.mustache` / `quota-fenno-detail.mustache`：详情页内容
 - `templates/partials/quota-cards.mustache`：HTMX 片段（手动查询用整卡）
+
+两个中转的额度模型不同，不要强行合并 service：EasyClaude 是单一额度池
+（total/used/remain），Fenno 是按日/周/月重置的消费上限，其 `remaining` 是**当日**剩余。
+错误信封也不同（`{status,info}` vs `{code,message}`），需各自映射。
+
+tab 按需加载用的是 `hx-trigger="change once"` 挂在 radio input 上，
+**不能用 `revealed`** —— `display:none` 的面板矩形为 0，会通过 htmx 的视口判断，
+结果在页面加载时就发起请求，按需加载失效。
 
 ## 测试规范
 

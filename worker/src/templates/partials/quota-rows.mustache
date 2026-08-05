@@ -23,7 +23,7 @@
           <div class="relative h-2 flex-1 rounded-full bg-base-300 overflow-hidden">
             <div class="absolute inset-y-0 left-0 rounded-full" style="width:{{pctNum}}%;background:{{pctColor}};"></div>
           </div>
-          <span class="text-sm font-semibold shrink-0" style="color:{{pctColor}};">{{pctNum}}%</span>
+          <span class="text-sm font-semibold shrink-0" style="color:{{pctColor}};">{{#pctLabel}}<span class="text-xs opacity-60 font-normal">{{pctLabel}} </span>{{/pctLabel}}{{pctNum}}%</span>
         </div>
         <div class="text-sm shrink-0">
           {{#isExpired}}<span class="text-error font-bold">已到期</span>{{/isExpired}}
@@ -34,7 +34,7 @@
         </div>
         <div class="flex items-center gap-1 shrink-0">
           <button class="btn btn-ghost btn-xs" onclick="navigator.clipboard.writeText(this.dataset.key);const t=this.textContent;this.textContent='已复制';setTimeout(()=>this.textContent=t,800)" data-key="{{rawKey}}" title="复制完整 Key">复制</button>
-          <a class="btn btn-outline btn-xs" href="/quota/{{id}}">详情</a>
+          <a class="btn btn-outline btn-xs" href="/quota/{{provider}}/{{id}}">详情</a>
         </div>
       </div>
     </div>

@@ -1,0 +1,145 @@
+<div class="max-w-2xl mx-auto flex flex-col gap-3">
+  <div class="flex items-center justify-between gap-2">
+    <a href="/quota" class="btn btn-ghost btn-sm">← 返回列表</a>
+    {{#ok}}
+    {{#statusOk}}<span class="badge badge-success badge-sm">正常</span>{{/statusOk}}
+    {{^statusOk}}<span class="badge badge-error badge-sm">停用</span>{{/statusOk}}
+    {{/ok}}
+  </div>
+
+  {{^ok}}
+  <div class="alert alert-error">
+    <div>
+      <div class="font-semibold">{{label}}</div>
+      <div class="text-sm">{{info}}</div>
+    </div>
+  </div>
+  {{/ok}}
+
+  {{#ok}}
+  <div class="card bg-base-100 shadow">
+    <div class="card-body gap-3 p-4">
+      <div class="min-w-0">
+        <div class="font-bold text-lg truncate">{{label}}</div>
+        <div class="text-sm opacity-50 font-mono">{{masked}}</div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+        <div class="flex items-center justify-between gap-2">
+          <span class="opacity-60 shrink-0">套餐</span>
+          <span class="font-medium truncate">{{planName}}</span>
+        </div>
+        <div class="flex items-center justify-between gap-2">
+          <span class="opacity-60 shrink-0">模式</span>
+          <span class="font-mono truncate">{{mode}}</span>
+        </div>
+      </div>
+
+      <div class="rounded-lg bg-base-200/60 px-3 py-2 flex flex-col gap-2">
+        <div class="flex items-center justify-between">
+          <span class="text-sm opacity-70">消费上限</span>
+          <div class="text-sm">
+            <span class="opacity-60">今日剩余 </span>
+            <span class="font-bold">{{remainingFmt}}</span>
+            <span class="opacity-60"> {{unit}}</span>
+          </div>
+        </div>
+        {{#caps}}
+        <div>
+          <div class="flex items-center justify-between text-sm mb-0.5">
+            <span class="opacity-70">{{name}}</span>
+            <span class="font-mono text-xs">
+              {{usedFmt}} <span class="opacity-50">/ {{limitFmt}}</span>
+            </span>
+          </div>
+          <div class="relative h-2 rounded-full bg-base-300 overflow-hidden">
+            {{^unlimited}}<div class="absolute inset-y-0 left-0 rounded-full" style="width:{{pct}}%;background:{{color}};"></div>{{/unlimited}}
+          </div>
+        </div>
+        {{/caps}}
+      </div>
+
+      <div class="rounded-lg bg-base-200/60 px-3 py-2">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-sm opacity-70">订阅有效期</span>
+          <div class="flex items-baseline gap-1 text-sm">
+            {{#isExpired}}<span class="text-error font-bold">已到期</span>{{/isExpired}}
+            {{^isExpired}}
+            {{#remainText}}<span class="font-bold text-base{{#isUrgent}} text-error{{/isUrgent}}">{{remainText}}</span><span class="opacity-60">后到期</span>{{/remainText}}
+            {{/isExpired}}
+            {{#daysUnknown}}<span class="opacity-50">—</span>{{/daysUnknown}}
+          </div>
+        </div>
+        <div class="flex justify-between text-sm font-mono">
+          <span class="opacity-60">周期起 {{weekStartFmt}}</span>
+          <span class="font-semibold">{{expiresFmt}}</span>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="table table-sm">
+          <thead>
+            <tr><th></th><th class="text-right">今日</th><th class="text-right">累计</th></tr>
+          </thead>
+          <tbody class="font-mono">
+            <tr><td class="opacity-60 font-sans">请求数</td><td class="text-right">{{today.requests}}</td><td class="text-right">{{total.requests}}</td></tr>
+            <tr><td class="opacity-60 font-sans">输入 token</td><td class="text-right">{{today.inputTokens}}</td><td class="text-right">{{total.inputTokens}}</td></tr>
+            <tr><td class="opacity-60 font-sans">输出 token</td><td class="text-right">{{today.outputTokens}}</td><td class="text-right">{{total.outputTokens}}</td></tr>
+            <tr><td class="opacity-60 font-sans">缓存读取</td><td class="text-right">{{today.cacheReadTokens}}</td><td class="text-right">{{total.cacheReadTokens}}</td></tr>
+            <tr><td class="opacity-60 font-sans">总 token</td><td class="text-right font-semibold">{{today.totalTokens}}</td><td class="text-right font-semibold">{{total.totalTokens}}</td></tr>
+            <tr><td class="opacity-60 font-sans">成本</td><td class="text-right font-semibold">{{today.costFmt}}</td><td class="text-right font-semibold">{{total.costFmt}}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div class="rounded-lg bg-base-200/60 py-2">
+          <div class="text-lg font-bold font-mono">{{rpm}}</div>
+          <div class="text-xs opacity-60">RPM</div>
+        </div>
+        <div class="rounded-lg bg-base-200/60 py-2">
+          <div class="text-lg font-bold font-mono">{{tpm}}</div>
+          <div class="text-xs opacity-60">TPM</div>
+        </div>
+        <div class="rounded-lg bg-base-200/60 py-2">
+          <div class="text-lg font-bold font-mono">{{avgDuration}}</div>
+          <div class="text-xs opacity-60">平均耗时</div>
+        </div>
+      </div>
+
+      {{#hasModels}}
+      <div class="overflow-x-auto">
+        <div class="text-sm opacity-70 mb-1">模型分摊</div>
+        <table class="table table-sm">
+          <thead>
+            <tr><th>模型</th><th class="text-right">请求</th><th class="text-right">token</th><th class="text-right">成本</th></tr>
+          </thead>
+          <tbody class="font-mono">
+            {{#models}}
+            <tr><td>{{model}}</td><td class="text-right">{{requests}}</td><td class="text-right">{{totalTokens}}</td><td class="text-right">{{costFmt}}</td></tr>
+            {{/models}}
+          </tbody>
+        </table>
+      </div>
+      {{/hasModels}}
+
+      {{#hasDaily}}
+      <div class="overflow-x-auto">
+        <div class="text-sm opacity-70 mb-1">每日用量</div>
+        <table class="table table-sm">
+          <thead>
+            <tr><th>日期</th><th class="text-right">请求</th><th class="text-right">token</th><th class="text-right">成本</th></tr>
+          </thead>
+          <tbody class="font-mono">
+            {{#daily}}
+            <tr><td>{{date}}</td><td class="text-right">{{requests}}</td><td class="text-right">{{totalTokens}}</td><td class="text-right">{{costFmt}}</td></tr>
+            {{/daily}}
+          </tbody>
+        </table>
+      </div>
+      {{/hasDaily}}
+
+      <button class="btn btn-outline btn-sm" onclick="navigator.clipboard.writeText(this.dataset.key);const t=this.textContent;this.textContent='已复制';setTimeout(()=>this.textContent=t,800)" data-key="{{rawKey}}">复制完整 Key</button>
+    </div>
+  </div>
+  {{/ok}}
+</div>

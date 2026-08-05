@@ -1,37 +1,76 @@
 <div class="max-w-2xl mx-auto flex flex-col gap-3">
-  <div class="flex items-center justify-between">
-    <h1 class="text-lg font-semibold">💰 EasyClaude 额度查询</h1>
-    {{#hasKeys}}
-    <button class="btn btn-ghost btn-sm gap-1" hx-post="/api/quota/check" hx-vals='{"mode":"saved"}' hx-target="#quota-result" hx-indicator="#quota-loading">
-      🔄 刷新 ({{keyCount}})
-    </button>
-    {{/hasKeys}}
-  </div>
+  <h1 class="text-lg font-semibold">💰 额度查询</h1>
 
-  <div class="collapse collapse-arrow bg-base-100 shadow">
-    <input type="checkbox" {{^hasKeys}}checked{{/hasKeys}} />
-    <div class="collapse-title text-sm font-medium py-2 min-h-0">手动查询（临时）</div>
-    <div class="collapse-content">
-      <form hx-post="/api/quota/check" hx-target="#quota-result" hx-indicator="#quota-loading" class="join w-full">
-        <input type="hidden" name="mode" value="manual"/>
-        <input type="text" name="api_key" class="input input-bordered input-sm join-item flex-1 font-mono" placeholder="sk-xxxxxxxx" autocomplete="off"/>
-        <button type="submit" class="btn btn-primary btn-sm join-item">查询</button>
-      </form>
+  <div class="tabs tabs-box">
+    <input type="radio" name="quota_tab" class="tab" aria-label="EasyClaude" checked />
+    <div class="tab-content border-base-300 bg-base-100 pt-3">
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <span class="text-sm opacity-60">已配置 {{ecCount}} 个 key</span>
+          {{#ecHasKeys}}
+          <button class="btn btn-ghost btn-sm gap-1" hx-post="/api/quota/check" hx-vals='{"mode":"saved"}' hx-target="#quota-result" hx-indicator="#quota-loading">
+            🔄 刷新
+          </button>
+          {{/ecHasKeys}}
+        </div>
+
+        <div class="collapse collapse-arrow bg-base-200/50">
+          <input type="checkbox" {{^ecHasKeys}}checked{{/ecHasKeys}} />
+          <div class="collapse-title text-sm font-medium py-2 min-h-0">手动查询（临时）</div>
+          <div class="collapse-content">
+            <form hx-post="/api/quota/check" hx-target="#quota-result" hx-indicator="#quota-loading" class="join w-full">
+              <input type="hidden" name="mode" value="manual"/>
+              <input type="text" name="api_key" class="input input-bordered input-sm join-item flex-1 font-mono" placeholder="sk-xxxxxxxx" autocomplete="off"/>
+              <button type="submit" class="btn btn-primary btn-sm join-item">查询</button>
+            </form>
+          </div>
+        </div>
+
+        {{^ecHasKeys}}
+        <div class="alert alert-info text-sm py-2">
+          💡 尚未配置 EasyClaude key，请先在 <a href="/settings" class="link font-medium">设置</a> 中添加。
+        </div>
+        {{/ecHasKeys}}
+
+        <div id="quota-loading" class="htmx-indicator flex justify-center py-4">
+          <span class="loading loading-spinner loading-md"></span>
+        </div>
+        <div id="quota-result" hx-swap="innerHTML">
+          {{#ecHasKeys}}
+          <div hx-post="/api/quota/check" hx-vals='{"mode":"saved"}' hx-target="#quota-result" hx-indicator="#quota-loading" hx-trigger="load"></div>
+          {{/ecHasKeys}}
+        </div>
+      </div>
     </div>
-  </div>
 
-  {{^hasKeys}}
-  <div class="alert alert-info text-sm py-2">
-    💡 尚未配置 key，请先在 <a href="/settings" class="link font-medium">设置</a> 中添加。
-  </div>
-  {{/hasKeys}}
+    <!--
+      Query on first tab open, not page load. hx-trigger="revealed" doesn't work here:
+      a display:none panel has a zero rect, which passes htmx's in-viewport test.
+    -->
+    <input type="radio" name="quota_tab" class="tab" aria-label="Fenno"
+      {{#fnHasKeys}}hx-post="/api/fenno/check" hx-target="#fenno-result" hx-indicator="#fenno-loading" hx-trigger="change once"{{/fnHasKeys}} />
+    <div class="tab-content border-base-300 bg-base-100 pt-3">
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center justify-between">
+          <span class="text-sm opacity-60">已配置 {{fnCount}} 个 key</span>
+          {{#fnHasKeys}}
+          <button class="btn btn-ghost btn-sm gap-1" hx-post="/api/fenno/check" hx-target="#fenno-result" hx-indicator="#fenno-loading">
+            🔄 刷新
+          </button>
+          {{/fnHasKeys}}
+        </div>
 
-  <div id="quota-loading" class="htmx-indicator flex justify-center py-4">
-    <span class="loading loading-spinner loading-md"></span>
-  </div>
-  <div id="quota-result" hx-swap="innerHTML">
-    {{#hasKeys}}
-    <div hx-post="/api/quota/check" hx-vals='{"mode":"saved"}' hx-target="#quota-result" hx-indicator="#quota-loading" hx-trigger="load"></div>
-    {{/hasKeys}}
+        {{^fnHasKeys}}
+        <div class="alert alert-info text-sm py-2">
+          💡 尚未配置 Fenno key，请先在 <a href="/settings" class="link font-medium">设置</a> 中添加。
+        </div>
+        {{/fnHasKeys}}
+
+        <div id="fenno-loading" class="htmx-indicator flex justify-center py-4">
+          <span class="loading loading-spinner loading-md"></span>
+        </div>
+        <div id="fenno-result" hx-swap="innerHTML"></div>
+      </div>
+    </div>
   </div>
 </div>

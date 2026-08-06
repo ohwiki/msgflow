@@ -42,8 +42,17 @@ export interface FennoUsage {
   isValid: boolean;
   mode: string;
   planName: string;
+  /** Raw upstream value. Stale once a key hits its daily cap — prefer dailyRemaining. */
   remaining: number;
   unit: string;
+  /**
+   * Today's spend, derived from usage.today rather than subscription.daily_usage_usd.
+   * Upstream stops resetting daily_usage_usd for keys that exhausted the cap, leaving
+   * yesterday's total in place after midnight; usage.today resets correctly.
+   */
+  dailyUsed: number;
+  /** max(0, daily_limit - dailyUsed). Recomputed for the same reason. */
+  dailyRemaining: number;
   subscription: FennoSubscription;
   today: FennoUsageBlock;
   total: FennoUsageBlock;

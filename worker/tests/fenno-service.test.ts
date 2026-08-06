@@ -94,6 +94,29 @@ describe("parseUsage", () => {
     expect(u.daily[0]!.cache_read_tokens).toBe(2038272);
   });
 
+  it("derives today's spend from usage.today, ignoring a stale daily_usage_usd", () => {
+    // Real upstream state seen on 2026-08-06: a key that exhausted its cap the previous
+    // day still reported daily_usage_usd=100.07 and remaining=0, while usage.today was 0.
+    const stale = {
+      ...RAW,
+      remaining: 0,
+      subscription: { ...RAW.subscription, daily_usage_usd: 100.06854288 },
+      usage: { ...RAW.usage, today: { ...RAW.usage.today, requests: 0, total_tokens: 0, cost: 0, actual_cost: 0 } },
+    };
+    const u = parseUsage(stale as Record<string, unknown>);
+    expect(u.dailyUsed).toBe(0);
+    expect(u.dailyRemaining).toBe(100);
+    expect(u.remaining).toBe(0); // raw value preserved, just not used for display
+  });
+
+  it("never reports negative remaining when spend overshoots the cap", () => {
+    const over = {
+      ...RAW,
+      usage: { ...RAW.usage, today: { ...RAW.usage.today, cost: 100.07 } },
+    };
+    expect(parseUsage(over as Record<string, unknown>).dailyRemaining).toBe(0);
+  });
+
   it("survives an empty object without throwing", () => {
     const u = parseUsage({});
     expect(u.isValid).toBe(false);
@@ -114,7 +137,8 @@ describe("view models", () => {
   describe("toFennoRowViewModels", () => {
     it("derives the percentage from the daily cap and labels it as such", () => {
       const [row] = toFennoRowViewModels([result()]);
-      // 98.284 / 100 → 98%, and the label must say 今日 so it isn't read as a balance.
+      // (100 - today.cost 1.716) / 100 → 98%, and the label must say 今日
+      // so it isn't read as a lifetime balance.
       expect(row!.pctNum).toBe(98);
       expect(row!.pctLabel).toBe("今日");
       expect(row!.pctColor).toBe("#3b82f6");
@@ -157,6 +181,20 @@ describe("view models", () => {
       expect(vm.caps![0]!).toMatchObject({ usedFmt: "1.72 USD", limitFmt: "100.00 USD", pct: 2, unlimited: false });
     });
 
+    it("shows a reset day as 0 used / full remaining despite a stale daily_usage_usd", () => {
+      const stale = {
+        ...RAW,
+        remaining: 0,
+        subscription: { ...RAW.subscription, daily_usage_usd: 100.06854288 },
+        usage: { ...RAW.usage, today: { ...RAW.usage.today, requests: 0, total_tokens: 0, cost: 0, actual_cost: 0 } },
+      };
+      const vm = toFennoDetailViewModel(result(stale));
+      expect(vm.remainingFmt).toBe("100.00");
+      expect(vm.caps![0]!).toMatchObject({ usedFmt: "0.00 USD", pct: 0 });
+      // The cumulative windows keep their upstream values — only the daily figure is rebuilt.
+      expect(vm.caps![2]!.usedFmt).toBe("3.91 USD");
+    });
+
     it("treats a zero weekly limit as 未设置 rather than a spent budget", () => {
       const weekly = toFennoDetailViewModel(result()).caps![1]!;
       expect(weekly.unlimited).toBe(true);
@@ -165,7 +203,7 @@ describe("view models", () => {
     });
 
     it("colours a cap red once it nears the limit", () => {
-      const raw = { ...RAW, subscription: { ...RAW.subscription, daily_usage_usd: 95 } };
+      const raw = { ...RAW, usage: { ...RAW.usage, today: { ...RAW.usage.today, cost: 95 } } };
       expect(toFennoDetailViewModel(result(raw)).caps![0]!.color).toBe("#f87171");
     });
 

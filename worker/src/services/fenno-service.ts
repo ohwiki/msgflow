@@ -86,7 +86,7 @@ export class FennoService {
 
     try {
       const usage = await this.client.query(entry.key);
-      this.log.info("fenno_query_ok", { label: entry.label, remaining: String(usage.remaining) });
+      this.log.info("fenno_query_ok", { label: entry.label, remaining: String(usage.dailyRemaining) });
       return { label: entry.label, masked, rawKey: entry.key, ok: true, usage };
     } catch (e) {
       const info = e instanceof AppError ? e.message : e instanceof Error ? e.message : "未知错误";
@@ -151,6 +151,14 @@ function parseSubscription(raw: Record<string, unknown> | undefined): FennoSubsc
 export function parseUsage(raw: Record<string, unknown>): FennoUsage {
   const usage = (raw.usage ?? {}) as Record<string, unknown>;
   const rawModels = raw.model_stats;
+  const subscription = parseSubscription(raw.subscription as Record<string, unknown> | undefined);
+  const today = parseBlock(usage.today as Record<string, unknown> | undefined);
+
+  // Derive today's spend from usage.today, not subscription.daily_usage_usd: once a key
+  // exhausts its daily cap, upstream leaves daily_usage_usd (and the `remaining` it feeds)
+  // frozen at yesterday's total past midnight, while usage.today resets to 0 on schedule.
+  const dailyUsed = today.cost;
+  const dailyRemaining = Math.max(0, subscription.daily_limit_usd - dailyUsed);
 
   return {
     isValid: raw.isValid === true,
@@ -158,8 +166,10 @@ export function parseUsage(raw: Record<string, unknown>): FennoUsage {
     planName: String(raw.planName ?? ""),
     remaining: num(raw.remaining),
     unit: String(raw.unit ?? "USD"),
-    subscription: parseSubscription(raw.subscription as Record<string, unknown> | undefined),
-    today: parseBlock(usage.today as Record<string, unknown> | undefined),
+    dailyUsed,
+    dailyRemaining,
+    subscription,
+    today,
     total: parseBlock(usage.total as Record<string, unknown> | undefined),
     rpm: num(usage.rpm),
     tpm: num(usage.tpm),
@@ -242,7 +252,7 @@ export function toFennoRowViewModels(results: FennoResult[]): FennoRowViewModel[
 
     const u = r.usage!;
     const limit = u.subscription.daily_limit_usd;
-    const pctNum = limit > 0 ? Math.min(100, Math.max(0, Math.round((u.remaining / limit) * 100))) : 0;
+    const pctNum = limit > 0 ? Math.min(100, Math.max(0, Math.round((u.dailyRemaining / limit) * 100))) : 0;
     const end = parseIso(u.subscription.expires_at);
     const remainMs = end == null ? NaN : end - Date.now();
     const expired = !isNaN(remainMs) && remainMs <= 0;
@@ -369,9 +379,9 @@ export function toFennoDetailViewModel(r: FennoResult): FennoDetailViewModel {
     planName: u.planName || "—",
     mode: u.mode || "—",
     unit,
-    remainingFmt: u.remaining.toFixed(2),
+    remainingFmt: u.dailyRemaining.toFixed(2),
     caps: [
-      toCap("今日", s.daily_usage_usd, s.daily_limit_usd, unit),
+      toCap("今日", u.dailyUsed, s.daily_limit_usd, unit),
       toCap("本周", s.weekly_usage_usd, s.weekly_limit_usd, unit),
       toCap("本月", s.monthly_usage_usd, s.monthly_limit_usd, unit),
     ],

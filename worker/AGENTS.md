@@ -238,12 +238,41 @@ return Mustache.render(tpl, viewModel);
 - `templates/partials/quota-cards.mustache`：HTMX 片段（手动查询用整卡）
 
 两个中转的额度模型不同，不要强行合并 service：EasyClaude 是单一额度池
-（total/used/remain），Fenno 是按日/周/月重置的消费上限，其 `remaining` 是**当日**剩余。
+（total/used/remain），Fenno 是按日/周/月重置的消费上限。
 错误信封也不同（`{status,info}` vs `{code,message}`），需各自映射。
 
-tab 按需加载用的是 `hx-trigger="change once"` 挂在 radio input 上，
-**不能用 `revealed`** —— `display:none` 的面板矩形为 0，会通过 htmx 的视口判断，
-结果在页面加载时就发起请求，按需加载失效。
+### Fenno 上游的两个坑
+
+**1. 打满日限后 `daily_usage_usd` 不跨日重置。**
+2026-08-06 实测：某 key 前一日打满 100 USD 上限，次日同一响应里
+`subscription.daily_usage_usd = 100.06854288`（与 `daily_usage[2026-08-05].cost`
+精确到 8 位小数相同），而 `usage.today.cost = 0`，`daily_usage` 数组无当日条目。
+`remaining` 由前者算出，因此一并失真。三个 key 对照可确认触发条件是**打满上限**：
+未打满的两个都正常重置。
+
+因此今日口径一律由 `usage.today` 推导（`parseUsage()` 里的 `dailyUsed` /
+`dailyRemaining`），**不要直接用 `subscription.daily_usage_usd` 或 `remaining`**。
+周/月是累计值，与 `usage.total` 吻合，可照常使用。
+
+**2. `start_date` / `end_date` 只筛 `model_stats`，不影响其他字段。**
+早期提交说明里写过「参数无效」，那个结论是错的（当时只比对了
+`daily_usage` / `usage.total` / `remaining`，差异恰好都在 `model_stats` 里）。
+实测：查单日时 `model_stats` 会按该日筛选（08-04 单日合计 2.1972，
+与 `daily_usage[2026-08-04].cost` 吻合）；查当日若无用量，该字段**整个消失**
+（不是空数组，故类型定义为 optional）。`usage.*`、`subscription`、`daily_usage`
+逐字段比对 0 处差异，永远是「当前状态 + 全部历史」。
+
+所以现在只调无参数接口是合理的，但要加「某日模型分摊」时参数是可用的 ——
+别被那句旧结论挡住。
+
+### tab 按需加载
+
+用 `hx-trigger="intersect once"`，挂在 `#fenno-result` 内的占位 div 上。
+另外两种写法都试过且都有坑：`revealed` 会在页面加载时立即触发，因为
+`display:none` 面板矩形为 0，能通过 htmx 的视口判断；`change once` 挂在 radio 上
+则会在**详情页返回后**让面板永久空白 —— 浏览器把 radio 恢复为已选中状态，
+再点它不产生 change 事件。`intersect` 走 `IntersectionObserver`，
+能正确把隐藏面板判为未进入视口。
 
 ## 测试规范
 
